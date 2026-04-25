@@ -233,16 +233,15 @@ export default function HomeScreen({ onStart, user }) {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 0,
-        maxWidth: 1280, width: "100%",
+        width: "100%",
         margin: "0 auto",
-        padding: "52px 52px",
+        padding: "52px 95px",
         alignItems: "center",
       }}>
 
         {/* LEFT */}
         <div style={{
           paddingRight: 56,
-          borderRight: "1px solid rgba(0,0,0,0.07)",
           animation: mounted ? "fadeUp 0.65s ease 0.1s both" : "none",
         }}>
 
@@ -334,7 +333,7 @@ export default function HomeScreen({ onStart, user }) {
             </div>
           )}
 
-          <p style={{ marginTop: 16, fontSize: 11, fontWeight: 400, color: "#cbd5e1", textAlign: "center" }}>
+          <p style={{ marginTop: 16, fontSize: 11, fontWeight: 400, color: "#94a3b8", textAlign: "center" }}>
             By starting, you agree to abide by all the rules listed.
           </p>
         </div>
@@ -368,7 +367,7 @@ export default function HomeScreen({ onStart, user }) {
                   border: "1px solid #e2e8f0",
                   borderRadius: 12, padding: "13px 16px",
                   display: "flex", gap: 13, alignItems: "center",
-                  transitionDelay: `${0.3 + i * 0.08}s`,
+                  // transitionDelay: `${0.1 + i * 0.08}s`,
                   cursor: "default",
                 }}
               >
@@ -423,8 +422,8 @@ export default function HomeScreen({ onStart, user }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "18px 52px",
         borderTop: "1px solid rgba(0,0,0,0.06)",
-        fontSize: 11, fontWeight: 400,
-        color: "#cbd5e1", letterSpacing: "0.08em",
+        fontSize: 12, fontWeight: 400,
+        color: "#000", letterSpacing: "0.08em",
       }}>
         © 2025 QUIZPRO · ALL RIGHTS RESERVED
       </footer>

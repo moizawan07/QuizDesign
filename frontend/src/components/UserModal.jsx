@@ -122,9 +122,9 @@ export default function UserModal({ onComplete, onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "420px",
-          borderRadius: 16,
-          padding: "22px",
+          width: "400px",
+          borderRadius: 12,
+          padding: "24px",
           background: "#fff",
           boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
           transform: mounted ? "scale(1)" : "scale(0.9)",

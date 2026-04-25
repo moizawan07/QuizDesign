@@ -45,7 +45,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
         // auto submit
         setTimeout(() => {
           handleSubmit(true);
-          navigate("/"); // home page redirect
+          navigate("/"); 
         }, 4000);
       }
     };
@@ -341,8 +341,8 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       </header>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, position: "relative", zIndex: 10, padding: "40px 48px" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 300px", gap: 32 }}>
+      <main style={{ flex: 1, position: "relative", zIndex: 10, padding: "40px 150px" }}>
+        <div style={{margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 400px", gap: 32 }}>
 
           {/* ── QUESTION PANEL ── */}
           <div>
@@ -548,7 +548,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
               {/* Legend */}
               <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "row", gap: 20}}>
                   {[
                     { color: "#10b981", label: "Current" },
                     { color: "#10b981", label: "Answered", opacity: 0.3 },

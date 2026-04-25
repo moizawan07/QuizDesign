@@ -52,7 +52,7 @@ export default function ResultsTablePage() {
         📊 QuizPro Results Dashboard
       </header>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "30px 20px" }}>
+      <main style={{ margin: "0 auto", padding: "30px 100px" }}>
 
         {/* TITLE */}
         <div style={{ marginBottom: 25 }}>
@@ -128,7 +128,7 @@ export default function ResultsTablePage() {
                 }}>
                   {["Name","Email","Correct","Wrong","Unattempted","Percentage","Date"].map((h) => (
                     <th key={h} style={{
-                      padding: 14,
+                      padding: 18,
                       textAlign: "left",
                       fontWeight: 800,
                       letterSpacing: 0.5
