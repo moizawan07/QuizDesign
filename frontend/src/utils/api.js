@@ -20,13 +20,11 @@ api.interceptors.request.use((config) => {
 
 export const userAPI = {
   register: (userData) => api.post("/users/register", userData),
-  getProfile: () => api.get("/users/profile"),
 };
 
 export const quizAPI = {
   submitQuiz: (quizData) => api.post("/quiz/submit", quizData),
-  getResults: () => api.get("/quiz/results"),
-  getResultsTable: () => api.get("/quiz/results-table"),
+  getResultsTable: () => api.get("/quiz/results"),
 };
 
 export default api;
