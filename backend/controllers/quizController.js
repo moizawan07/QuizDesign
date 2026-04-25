@@ -1,9 +1,24 @@
 import QuizResult from "../models/QuizResult.js";
+import User from "../models/User.js";
 
 export const submitQuiz = async (req, res) => {
   try {
-    const { correct, wrong, unattempted, total, percentage, completedAt, timeTaken, note } = req.body;
-    const userId = req.user.id;
+      const userId = req.user.id;
+      const { correct, wrong, unattempted, total, percentage, completedAt, timeTaken, note } = req.body;
+
+     // check if already attempted
+    const user = await User.findById(userId);
+
+    if(!user){
+        return res.status(404).json({message: 'user not found'})
+    }
+
+    if (user.quizAttempt) {
+      return res.status(400).json({
+        message: "You already attempted the quiz"
+      });
+    }
+
 
     // Validation
     if (correct === undefined || wrong === undefined || unattempted === undefined || total === undefined) {
@@ -26,6 +41,11 @@ export const submitQuiz = async (req, res) => {
       note,
     });
 
+      // mark quiz as attempted
+    await User.findByIdAndUpdate(userId, {
+      quizAttempt: true
+    });
+
     res.status(201).json({
       success: true,
       quizResult,
@@ -39,22 +59,6 @@ export const submitQuiz = async (req, res) => {
   }
 };
 
-export const getResults = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const results = await QuizResult.find({ userId }).populate("userId");
-
-    res.status(200).json({
-      success: true,
-      results,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 export const getAllResults = async (req, res) => {
   try {
