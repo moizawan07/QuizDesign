@@ -17,8 +17,8 @@ export default function HomePage() {
     }
   };
 
-  const handleModalComplete = (userData) => {
-    login(userData);
+  const handleModalComplete = (userData, token) => {
+    login(userData, token);
     setShowModal(false);
     navigate("/quiz");
   };

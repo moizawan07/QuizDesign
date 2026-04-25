@@ -47,8 +47,8 @@ export default function UserModal({ onComplete, onClose }) {
         professional: form.professional,
       });
 
-      login(response.data.user, response.data.token);
-      onComplete(response.data.user);
+      // login(response.data.user, response.data.token);
+      onComplete(response.data.user, response.data.token);
     } catch (error) {
       setApiError(error.response?.data?.message || "Failed");
     } finally {

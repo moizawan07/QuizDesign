@@ -18,10 +18,10 @@ export default function HomeScreen({ onStart, user }) {
   const handleStart = () => {
     const attempted = localStorage.getItem("quiz_attempted");
 
-    // if (attempted === "true") {
-    //   setMsg("❌ You are not eligible. You have already attempted the quiz.");
-    //   return;
-    // }
+    if (attempted === "true") {
+      setMsg("❌ You are not eligible. You have already attempted the quiz.");
+      return;
+    }
 
     onStart();
   };

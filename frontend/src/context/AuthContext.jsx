@@ -6,6 +6,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -21,6 +22,8 @@ export function AuthProvider({ children }) {
   const login = (userData, authToken) => {
     setUser(userData);
     setToken(authToken);
+    console.log('auth token ==>', authToken);
+    
     localStorage.setItem("auth_token", authToken);
     localStorage.setItem("auth_user", JSON.stringify(userData));
   };
