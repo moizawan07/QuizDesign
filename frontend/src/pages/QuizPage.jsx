@@ -13,8 +13,8 @@ export default function QuizPage() {
     }
   }, [user, loading, navigate]);
 
-  const handleSubmitComplete = (result, userData) => {
-    navigate("/result", { state: { result, user: userData } });
+  const handleSubmitComplete = (result) => {
+    navigate("/result");
   };
 
   if (loading || !user) {

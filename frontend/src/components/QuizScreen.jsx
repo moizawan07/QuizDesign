@@ -6,22 +6,31 @@ import { quizAPI } from "../utils/api";
 const TOTAL_SECONDS = QUIZ_CONFIG.TIMER_MINUTES * 60;
 
 export default function QuizScreen({ user, onSubmitComplete }) {
-  // Filter questions by professional field
   const filteredQuestions = ALL_QUESTIONS.filter(q => 
     !q.professional || q.professional === user.professional
   );
   
   const [questions] = useState(() => shuffleArray(filteredQuestions));
   const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState({});    // { questionId: selectedOption }
+  const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
   const [tabWarnings, setTabWarnings] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
-  const [warningMsg, setWarningMsg]   = useState("");
-  const [submitting, setSubmitting]   = useState(false);
-  const [submitted, setSubmitted]     = useState(false);
-  const [result, setResult]           = useState(null);
+  const [warningMsg, setWarningMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [result, setResult] = useState(null);
+  
   const timerRef = useRef(null);
+  const isSubmittingRef = useRef(false);
+  
+  // ✅ IMPORTANT FIX: useRef to store latest answers for timer
+  const answersRef = useRef(answers);
+  
+  // ✅ Update ref whenever answers change
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   // ─── Tab Switch Detection ───────────────────────────────────────
   useEffect(() => {
@@ -45,60 +54,69 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   // ─── Disable Copy/Paste/Right-Click ────────────────────────────
   useEffect(() => {
     const block = e => e.preventDefault();
-    document.addEventListener("copy",        block);
-    document.addEventListener("paste",       block);
-    document.addEventListener("cut",         block);
+    document.addEventListener("copy", block);
+    document.addEventListener("paste", block);
+    document.addEventListener("cut", block);
     document.addEventListener("contextmenu", block);
     return () => {
-      document.removeEventListener("copy",        block);
-      document.removeEventListener("paste",       block);
-      document.removeEventListener("cut",         block);
+      document.removeEventListener("copy", block);
+      document.removeEventListener("paste", block);
+      document.removeEventListener("cut", block);
       document.removeEventListener("contextmenu", block);
     };
   }, []);
 
-  // ─── Timer ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (submitted) return;
-    timerRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          clearInterval(timerRef.current);
-          handleSubmit(false, true);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [submitted]);
-
-  // ─── Calculate Result ───────────────────────────────────────────
+  // ─── Calculate Result (FIXED) ───────────────────────────────────
   const calcResult = useCallback((ans) => {
-    let correct = 0, wrong = 0, unattempted = 0;
+    let correct = 0;
+    let wrong = 0;
+    let unattempted = 0;
+    
     questions.forEach(q => {
-      if (!ans[q.id]) {
+      const userAnswer = ans[q.id];
+      
+      if (userAnswer === undefined || userAnswer === null || userAnswer === "") {
         unattempted++;
-      } else if (ans[q.id] === q.answer) {
-        correct++;
       } else {
-        wrong++;
+        if (userAnswer === q.answer) {
+          correct++;
+        } else {
+          wrong++;
+        }
       }
     });
-    return { correct, wrong, unattempted, total: questions.length, percentage: Math.round((correct / questions.length) * 100) };
+    
+    return { 
+      correct, 
+      wrong, 
+      unattempted, 
+      total: questions.length, 
+      percentage: Math.round((correct / questions.length) * 100) 
+    };
   }, [questions]);
 
-  // ─── Submit ─────────────────────────────────────────────────────
+  // ─── Submit Function (FIXED - uses answersRef.current) ──────────
   const handleSubmit = useCallback(async (forcedByViolation = false, timedOut = false) => {
-    if (submitted || submitting) return;
+    if (submitted || submitting || isSubmittingRef.current) return;
+    
     clearInterval(timerRef.current);
+    isSubmittingRef.current = true;
     setSubmitting(true);
 
-    const finalAnswers = answers;
+    // ✅ CRITICAL FIX: Use answersRef.current (latest answers) instead of answers state
+    const finalAnswers = { ...answersRef.current };
     const res = calcResult(finalAnswers);
     setResult(res);
+    
     const completedAt = new Date();
     const timeTakenSeconds = TOTAL_SECONDS - timeLeft;
+
+    // ✅ Debug log - check kar bhai sahi hai ki nahi
+    console.log("========== QUIZ SUBMISSION ==========");
+    console.log("Submitted by:", timedOut ? "TIME EXPIRED" : forcedByViolation ? "TAB VIOLATION" : "MANUAL");
+    console.log("Total Answers given:", Object.keys(finalAnswers).length);
+    console.log("Result:", res);
+    console.log("Correct:", res.correct, "Wrong:", res.wrong, "Unattempted:", res.unattempted);
 
     const payload = {
       correct:      res.correct,
@@ -119,8 +137,28 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
     setSubmitted(true);
     setSubmitting(false);
-    setTimeout(() => onSubmitComplete(res, user), 300);
-  }, [submitted, submitting, answers, calcResult, user, onSubmitComplete, timeLeft]);
+    setTimeout(() => onSubmitComplete(res, user), 500);
+  }, [submitted, submitting, calcResult, user, onSubmitComplete, timeLeft]);
+
+  // ─── Timer Effect (FIXED - uses answersRef) ─────────────────────
+  useEffect(() => {
+    if (submitted) return;
+    
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          // ✅ CRITICAL FIX: Timer finish hone par answersRef.current use hoga
+          // Ab jo answers diye hain woh sahi se count honge
+          handleSubmit(false, true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timerRef.current);
+  }, [submitted, handleSubmit]);
 
   if (submitting) {
     return (
@@ -133,6 +171,35 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     );
   }
 
+  if (submitted && result) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--color-bg)", padding: 24 }}>
+        <div style={{ background: "var(--color-surface)", borderRadius: "var(--radius-xl)", padding: 32, maxWidth: 500, width: "100%", textAlign: "center", boxShadow: "var(--shadow-md)" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+          <h2 style={{ fontFamily: "var(--font-display)", marginBottom: 24 }}>Quiz Completed!</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 24 }}>
+            <div style={{ background: "rgba(34,197,94,0.1)", padding: 16, borderRadius: "var(--radius-md)" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-success)" }}>{result.correct}</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Correct</div>
+            </div>
+            <div style={{ background: "rgba(239,68,68,0.1)", padding: 16, borderRadius: "var(--radius-md)" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-danger)" }}>{result.wrong}</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Wrong</div>
+            </div>
+            <div style={{ background: "var(--color-surface-2)", padding: 16, borderRadius: "var(--radius-md)" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-text-muted)" }}>{result.unattempted}</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Unattempted</div>
+            </div>
+            <div style={{ background: "rgba(26,58,92,0.1)", padding: 16, borderRadius: "var(--radius-md)" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-primary)" }}>{result.percentage}%</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const q = questions[current];
   const answered = Object.keys(answers).length;
   const isUrgent = timeLeft <= 120;
@@ -140,7 +207,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--color-bg)", fontFamily: "var(--font-body)" }}>
-      {/* Tab Warning Toast */}
       {showWarning && (
         <div style={{
           position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
@@ -149,7 +215,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
           fontWeight: 600, fontSize: 13, zIndex: 999,
           boxShadow: "0 4px 20px rgba(220,38,38,0.4)",
           display: "flex", alignItems: "center", gap: 8,
-          animation: "fadeIn 0.3s ease"
         }}>
           {warningMsg}
           <button onClick={() => setShowWarning(false)}
@@ -159,7 +224,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
         </div>
       )}
 
-      {/* Top Bar */}
       <header style={{
         background: "var(--color-primary)",
         padding: "0 24px",
@@ -170,7 +234,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
         boxShadow: "var(--shadow-md)",
         position: "sticky", top: 0, zIndex: 100
       }}>
-        {/* Left: Quiz title */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>📝</span>
           <div>
@@ -183,7 +246,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
           </div>
         </div>
 
-        {/* Center: Progress */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, maxWidth: 300, margin: "0 24px" }}>
           <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "var(--color-accent)", borderRadius: 2, transition: "width 0.3s" }} />
@@ -193,31 +255,26 @@ export default function QuizScreen({ user, onSubmitComplete }) {
           </span>
         </div>
 
-        {/* Right: Timer */}
         <div style={{
           display: "flex", alignItems: "center", gap: 6,
           background: isUrgent ? "var(--color-danger)" : "rgba(255,255,255,0.12)",
           padding: "6px 14px", borderRadius: 24,
-          transition: "background 0.3s"
-        }} className={isUrgent ? "timer-urgent" : ""}>
+        }}>
           <span style={{ fontSize: 14 }}>⏱</span>
-          <span style={{
-            fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16,
-            color: "#fff", letterSpacing: 1
-          }}>{formatTime(timeLeft)}</span>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, color: "#fff", letterSpacing: 1 }}>
+            {formatTime(timeLeft)}
+          </span>
         </div>
       </header>
 
       <div style={{ flex: 1, maxWidth: 860, width: "100%", margin: "0 auto", padding: "24px 16px", display: "flex", gap: 20 }}>
-        {/* Question Panel */}
         <main style={{ flex: 1 }}>
-          <div key={q.id} className="fade-in" style={{
+          <div key={q.id} style={{
             background: "var(--color-surface)",
             borderRadius: "var(--radius-xl)",
             boxShadow: "var(--shadow-md)",
             overflow: "hidden"
           }}>
-            {/* Question Header */}
             <div style={{
               background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)",
               padding: "24px 28px"
@@ -232,9 +289,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                   padding: "3px 12px",
                   borderRadius: 20
                 }}>Q{current + 1}</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                  1 Mark
-                </span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>1 Mark</span>
               </div>
               <p style={{
                 fontFamily: "var(--font-display)",
@@ -245,7 +300,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
               }}>{q.question}</p>
             </div>
 
-            {/* Options */}
             <div style={{ padding: "24px 28px" }}>
               {q.options.map((opt, i) => {
                 const selected = answers[q.id] === opt;
@@ -265,11 +319,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                       cursor: "pointer",
                       textAlign: "left",
                       transition: "all 0.15s ease",
-                      transform: selected ? "translateX(4px)" : "translateX(0)"
-                    }}
-                    onMouseEnter={e => { if (!selected) { e.currentTarget.style.borderColor = "var(--color-primary-light)"; e.currentTarget.style.background = "#fff"; } }}
-                    onMouseLeave={e => { if (!selected) { e.currentTarget.style.borderColor = "var(--color-border)"; e.currentTarget.style.background = "var(--color-surface-2)"; } }}
-                  >
+                    }}>
                     <span style={{
                       minWidth: 28, height: 28,
                       borderRadius: 8,
@@ -277,7 +327,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                       color: selected ? "#fff" : "var(--color-text-muted)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
-                      transition: "all 0.15s"
                     }}>{letter}</span>
                     <span style={{ fontSize: 14, color: "var(--color-text)", lineHeight: 1.5, paddingTop: 4, flex: 1 }}>
                       {opt}
@@ -287,7 +336,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                 );
               })}
 
-              {/* Nav Buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
                 <button onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}
                   style={{
@@ -297,8 +345,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                     fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)",
                     cursor: current === 0 ? "not-allowed" : "pointer",
                     opacity: current === 0 ? 0.4 : 1,
-                    transition: "all 0.2s",
-                    display: "flex", alignItems: "center", gap: 6
                   }}>← Previous</button>
 
                 {current < questions.length - 1 ? (
@@ -309,7 +355,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                       background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)",
                       fontSize: 13, fontWeight: 600, color: "#fff",
                       cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 6
                     }}>Next →</button>
                 ) : (
                   <button onClick={() => handleSubmit()}
@@ -320,8 +365,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                       fontSize: 13, fontWeight: 700, color: "#fff",
                       cursor: "pointer",
                       fontFamily: "var(--font-display)",
-                      display: "flex", alignItems: "center", gap: 6,
-                      boxShadow: "0 4px 16px rgba(22,163,74,0.35)"
                     }}>✓ Submit Quiz</button>
                 )}
               </div>
@@ -329,7 +372,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
           </div>
         </main>
 
-        {/* Sidebar: Question Navigator */}
         <aside style={{ width: 220, flexShrink: 0 }}>
           <div style={{
             background: "var(--color-surface)",
@@ -338,9 +380,8 @@ export default function QuizScreen({ user, onSubmitComplete }) {
             boxShadow: "var(--shadow-md)",
             position: "sticky", top: 76
           }}>
-            {/* Stats */}
             <div style={{ marginBottom: 16 }}>
-              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: "var(--color-primary)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.8 }}>
+              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: "var(--color-primary)", marginBottom: 12 }}>
                 Progress
               </h3>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
@@ -356,21 +397,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
               </div>
             </div>
 
-            {/* Legend */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-              {[
-                { color: "var(--color-primary)", label: "Current" },
-                { color: "var(--color-success)", label: "Answered" },
-                { color: "var(--color-border)", label: "Pending" },
-              ].map(l => (
-                <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 3, background: l.color }} />
-                  <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>{l.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Grid Navigator */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
               {questions.map((q2, i) => {
                 const isAnswered = !!answers[q2.id];
@@ -389,13 +415,11 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                       color: (isCurrent || isAnswered) ? "#fff" : "var(--color-text-muted)",
                       fontSize: 11, fontWeight: 600,
                       cursor: "pointer",
-                      transition: "all 0.15s"
                     }}>{i + 1}</button>
                 );
               })}
             </div>
 
-            {/* Final Submit */}
             <button onClick={() => handleSubmit()}
               style={{
                 width: "100%",
@@ -409,7 +433,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                 fontFamily: "var(--font-display)",
                 fontWeight: 700,
                 cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(22,163,74,0.3)"
               }}>
               ✓ Submit Quiz
             </button>
