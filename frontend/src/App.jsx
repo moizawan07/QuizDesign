@@ -12,7 +12,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/quiz" element={<QuizPage />} />
-          <Route path="/result" element={<ResultPage />} />
           <Route path="/results" element={<ResultsTablePage />} />
         </Routes>
       </AuthProvider>

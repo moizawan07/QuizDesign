@@ -11,10 +11,8 @@ export default function ResultsTablePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/");
-    }
-  }, [user, loading, navigate]);
+    if (!loading && !user) navigate("/");
+  }, [user, loading]);
 
   useEffect(() => {
     fetchResults();
@@ -23,217 +21,212 @@ export default function ResultsTablePage() {
   const fetchResults = async () => {
     try {
       setTableLoading(true);
-      const response = await quizAPI.getResultsTable();
-      setResults(response.data.results || []);
-    } catch (error) {
-      setError("Failed to load results. Please try again.");
-      console.error("Error fetching results:", error);
+      const res = await quizAPI.getResultsTable();
+      setResults(res.data.results || []);
+    } catch (err) {
+      setError("Failed to load results");
     } finally {
       setTableLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-bg)" }}>
-        <div style={{ width: 56, height: 56, border: "4px solid var(--color-border)", borderTopColor: "var(--color-primary)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ minHeight: "100vh", background: "var(--color-bg)", fontFamily: "var(--font-body)" }}>
-      {/* Header */}
+    <div style={{
+      minHeight: "100vh",
+      background: "#f4f7fb",
+      fontFamily: "'Poppins', sans-serif"
+    }}>
+
+      {/* HEADER (NEW THEME) */}
       <header style={{
-        background: "var(--color-primary)",
-        padding: "18px 32px",
+        background: "linear-gradient(135deg, #10b981, #059669)",
+        padding: "16px 28px",
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        boxShadow: "var(--shadow-md)",
+        gap: 10,
+        color: "#fff",
+        fontWeight: 800,
+        fontSize: 16,
+        boxShadow: "0 10px 25px rgba(16,185,129,0.25)"
       }}>
-        <span style={{ fontSize: 22 }}>📊</span>
-        <span style={{
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: 16,
-          color: "#fff",
-        }}>
-          Quiz Results
-        </span>
+        📊 QuizPro Results Dashboard
       </header>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 20px" }}>
-        {/* Title */}
-        <div style={{ marginBottom: 32 }}>
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "30px 20px" }}>
+
+        {/* TITLE */}
+        <div style={{ marginBottom: 25 }}>
           <h1 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(24px, 4vw, 32px)",
-            fontWeight: 800,
-            color: "var(--color-primary)",
-            marginBottom: 8,
+            fontSize: 28,
+            fontWeight: 900,
+            color: "#0f172a"
           }}>
-            All Quiz Results
+            Results Overview
           </h1>
-          <p style={{ fontSize: 14, color: "var(--color-text-muted)" }}>
-            Total Submissions: <strong>{results.length}</strong>
+          <p style={{ color: "#64748b", fontSize: 13 }}>
+            Total Submissions: <b>{results.length}</b>
           </p>
         </div>
 
-        {/* Error Message */}
+        {/* ERROR */}
         {error && (
           <div style={{
-            background: "var(--color-danger-bg)",
-            color: "var(--color-danger)",
-            padding: "16px",
-            borderRadius: "var(--radius-md)",
+            background: "rgba(239,68,68,0.08)",
+            color: "#dc2626",
+            padding: 14,
+            borderRadius: 12,
             marginBottom: 20,
+            fontWeight: 600
           }}>
             ⚠ {error}
           </div>
         )}
 
-        {/* Table Loading */}
+        {/* LOADING */}
         {tableLoading ? (
           <div style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 400,
             flexDirection: "column",
-            gap: 16,
+            alignItems: "center",
+            padding: 60,
+            gap: 12
           }}>
-            <div style={{
-              width: 48,
-              height: 48,
-              border: "3px solid var(--color-border)",
-              borderTopColor: "var(--color-primary)",
-              borderRadius: "50%",
-              animation: "spin 0.8s linear infinite",
-            }} />
-            <p style={{ color: "var(--color-text-muted)" }}>Loading results...</p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div className="loader" />
+            <p style={{ color: "#64748b" }}>Loading results...</p>
           </div>
         ) : results.length === 0 ? (
           <div style={{
-            background: "var(--color-surface)",
-            borderRadius: "var(--radius-xl)",
-            padding: "48px 32px",
+            background: "#fff",
+            padding: 50,
             textAlign: "center",
-            boxShadow: "var(--shadow-md)",
+            borderRadius: 16,
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)"
           }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
-            <h2 style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 700,
-              fontSize: 18,
-              color: "var(--color-text)",
-              marginBottom: 8,
-            }}>
-              No Results Yet
-            </h2>
-            <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
-              No quiz results have been submitted yet.
-            </p>
+            📭 No results found
           </div>
         ) : (
+
+          /* SAME TABLE STRUCTURE (NO CHANGE) */
           <div style={{
-            background: "var(--color-surface)",
-            borderRadius: "var(--radius-xl)",
+            background: "#fff",
+            borderRadius: 16,
             overflow: "hidden",
-            boxShadow: "var(--shadow-md)",
-            overflowX: "auto",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+            border: "1px solid #e2e8f0"
           }}>
+
             <table style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: 13,
+              fontSize: 13
             }}>
+
               <thead>
-                <tr style={{ background: "var(--color-primary)", color: "#fff" }}>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Name</th>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Email</th>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Correct</th>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Wrong</th>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Unattempted</th>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Percentage</th>
-                  <th style={{ padding: "14px", textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>Submitted</th>
+                <tr style={{
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  color: "#fff"
+                }}>
+                  {["Name","Email","Correct","Wrong","Unattempted","Percentage","Date"].map((h) => (
+                    <th key={h} style={{
+                      padding: 14,
+                      textAlign: "left",
+                      fontWeight: 800,
+                      letterSpacing: 0.5
+                    }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
+
               <tbody>
-                {results.map((result, idx) => (
+                {results.map((r, i) => (
                   <tr
-                    key={result._id}
+                    key={r._id}
                     style={{
-                      borderTop: "1px solid var(--color-border)",
-                      background: idx % 2 === 0 ? "transparent" : "var(--color-surface-2)",
-                      transition: "background 0.2s",
+                      borderTop: "1px solid #e2e8f0",
+                      background: i % 2 === 0 ? "#fff" : "#f8fafc",
+                      transition: "0.2s"
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--color-primary-bg)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "var(--color-surface-2)";
-                    }}
+                    onMouseEnter={(e) =>
+                      e.currentTarget.style.background = "#ecfdf5"
+                    }
+                    onMouseLeave={(e) =>
+                      e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#f8fafc"
+                    }
                   >
-                    <td style={{ padding: "14px" }}>
-                      <strong>{result.userId?.name || "N/A"}</strong>
+
+                    <td style={cellBold}>{r.userId?.name || "N/A"}</td>
+                    <td style={cell}>{r.userId?.email}</td>
+
+                    <td style={{ ...cell, color: "#10b981", fontWeight: 700 }}>
+                      {r.correct}
                     </td>
-                    <td style={{ padding: "14px" }}>{result.userId?.email || "N/A"}</td>
-                    <td style={{ padding: "14px" }}>
-                      <span style={{ color: "var(--color-success)", fontWeight: 600 }}>{result.correct}</span>
+
+                    <td style={{ ...cell, color: "#ef4444", fontWeight: 700 }}>
+                      {r.wrong}
                     </td>
-                    <td style={{ padding: "14px" }}>
-                      <span style={{ color: "var(--color-danger)", fontWeight: 600 }}>{result.wrong}</span>
+
+                    <td style={{ ...cell, color: "#f59e0b", fontWeight: 700 }}>
+                      {r.unattempted}
                     </td>
-                    <td style={{ padding: "14px" }}>
-                      <span style={{ color: "var(--color-warning)", fontWeight: 600 }}>{result.unattempted}</span>
+
+                    <td style={{
+                      fontWeight: 800,
+                      color: r.percentage >= 60 ? "#10b981" : "#ef4444"
+                    }}>
+                      {r.percentage}%
                     </td>
-                    <td style={{ padding: "14px" }}>
-                      <span style={{
-                        fontWeight: 700,
-                        color: result.percentage >= 60 ? "var(--color-success)" : "var(--color-danger)",
-                      }}>
-                        {result.percentage}%
-                      </span>
+
+                    <td style={{ fontSize: 12, color: "#64748b" }}>
+                      {new Date(r.completedAt).toLocaleString()}
                     </td>
-                    <td style={{ padding: "14px", fontSize: 12 }}>
-                      {new Date(result.completedAt).toLocaleDateString()} <br />
-                      {new Date(result.completedAt).toLocaleTimeString()}
-                    </td>
+
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}
 
-        {/* Back Button */}
+        {/* BACK BUTTON */}
         <button
           onClick={() => navigate("/")}
           style={{
-            marginTop: 24,
-            padding: "12px 24px",
-            background: "var(--color-primary)",
-            color: "#fff",
+            marginTop: 22,
+            padding: "12px 18px",
+            borderRadius: 12,
             border: "none",
-            borderRadius: "var(--radius-md)",
-            fontSize: 14,
-            fontWeight: 600,
+            background: "linear-gradient(135deg, #10b981, #059669)",
+            color: "#fff",
+            fontWeight: 700,
             cursor: "pointer",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--color-primary-light)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--color-primary)";
+            boxShadow: "0 10px 20px rgba(16,185,129,0.25)"
           }}
         >
-          ← Back to Home
+          ← Back
         </button>
+
       </main>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .loader {
+          width: 42px;
+          height: 42px;
+          border: 4px solid #e2e8f0;
+          border-top-color: #10b981;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+      `}</style>
+
     </div>
   );
 }
+
+const cell = { padding: 14, color: "#334155" };
+const cellBold = { padding: 14, fontWeight: 700, color: "#0f172a" };
