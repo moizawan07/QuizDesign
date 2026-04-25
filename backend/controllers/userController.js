@@ -7,54 +7,56 @@ const generateToken = (id) => {
   });
 };
 
-export const registerUser = async (req, res) => {
+export const SignupOrLogin = async (req, res) => {
   try {
-    const { name, fatherName, email, idNo, professional } = req.body;
+    const { name, email, idNo, professional } = req.body;
 
-    // Validation
-    if (!name || !fatherName || !email || !idNo || !professional) {
+    // validation
+    if (!name || !email || !idNo || !professional) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
       });
     }
 
-    // Check if user already exists
-    let user = await User.findOne({ $or: [{ email }, { idNo }] });
-    if (user) {
-      return res.status(400).json({
-        success: false,
-        message: "User with this email or ID already exists",
+    // check existing user
+    let user = await User.findOne({
+      $or: [{ email }, { idNo }],
+    });
+
+    let isNewUser = false;
+
+    // create new user if not exists
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        idNo,
+        professional,
       });
+
+      isNewUser = true;
     }
 
-    // Create user
-    user = await User.create({
-      name,
-      fatherName,
-      email,
-      idNo,
-      professional,
-    });
-
-    // Generate token
+    // generate token
     const token = generateToken(user._id);
 
-    // Return user and token
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      idNo: user.idNo,
-      professional: user.professional,
-    };
-
-    res.status(201).json({
+    res.status(isNewUser ? 201 : 200).json({
       success: true,
       token,
-      user: userResponse,
-      message: "User registered successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        idNo: user.idNo,
+        professional: user.professional,
+        quizAttempt: user.quizAttempt
+      },
+      message: isNewUser
+        ? "User registered successfully"
+        : "Login successful",
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
