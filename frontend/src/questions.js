@@ -3,7 +3,7 @@
 // ============================================================
 
 export const QUIZ_CONFIG = {
-  TIMER_MINUTES: 1,   // Change this to adjust quiz time
+  TIMER_MINUTES: 5,   // Change this to adjust quiz time
   TOTAL_MARKS_PER_QUESTION: 1,
 };
 

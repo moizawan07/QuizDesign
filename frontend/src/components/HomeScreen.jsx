@@ -1,6 +1,6 @@
 import { QUIZ_CONFIG } from "../questions";
 import { useEffect, useState } from "react";
- 
+
 const rules = [
   { icon: "🚫", title: "No AI Tools", desc: "Use of ChatGPT, Claude, or any AI assistant is strictly prohibited." },
   { icon: "📋", title: "No Copy-Paste", desc: "Copying or pasting text from any external source is disabled." },
@@ -9,11 +9,23 @@ const rules = [
   { icon: "✅", title: "1 Mark Per Question", desc: "Each correct answer carries 1 mark. No negative marking." },
   { icon: "📵", title: "No External Help", desc: "No textbooks, notes, or peer assistance allowed during the quiz." },
 ];
- 
+
 export default function HomeScreen({ onStart, user }) {
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState([]);
- 
+  const [msg, setMsg] = useState("");
+
+  const handleStart = () => {
+    const attempted = localStorage.getItem("quiz_attempted");
+
+    // if (attempted === "true") {
+    //   setMsg("❌ You are not eligible. You have already attempted the quiz.");
+    //   return;
+    // }
+
+    onStart();
+  };
+
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -25,7 +37,7 @@ export default function HomeScreen({ onStart, user }) {
     });
     return () => { clearTimeout(t1); document.head.removeChild(link); };
   }, []);
- 
+
   return (
     <div style={{
       minHeight: "100vh", width: "100%",
@@ -96,24 +108,24 @@ export default function HomeScreen({ onStart, user }) {
           box-shadow: 0 8px 24px rgba(16,185,129,0.12);
         }
       `}</style>
- 
+
       {/* ── BG DECORATION ── */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
- 
+
         {/* Emerald glow top-right */}
         <div style={{
           position: "absolute", top: -140, right: -140,
           width: 520, height: 520, borderRadius: "50%",
           background: "radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 68%)",
         }} />
- 
+
         {/* Light green glow bottom-left */}
         <div style={{
           position: "absolute", bottom: -100, left: -100,
           width: 420, height: 420, borderRadius: "50%",
           background: "radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 68%)",
         }} />
- 
+
         {/* Rotating ring */}
         <div style={{
           position: "absolute", top: "10%", right: "5%",
@@ -137,7 +149,7 @@ export default function HomeScreen({ onStart, user }) {
           marginTop: 40, marginRight: 40,
           animation: "rotateSlow 14s linear infinite reverse",
         }} />
- 
+
         {/* Dot grid */}
         <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: 0.55 }}>
           <defs>
@@ -147,7 +159,7 @@ export default function HomeScreen({ onStart, user }) {
           </defs>
           <rect width="100%" height="100%" fill="url(#dotgrid)" />
         </svg>
- 
+
         {/* Vertical divider hint */}
         <div style={{
           position: "absolute", top: 0, left: "42%",
@@ -155,7 +167,7 @@ export default function HomeScreen({ onStart, user }) {
           background: "linear-gradient(180deg, transparent, rgba(16,185,129,0.06) 30%, rgba(16,185,129,0.06) 70%, transparent)",
         }} />
       </div>
- 
+
       {/* ── HEADER ── */}
       <header style={{
         position: "relative", zIndex: 20,
@@ -184,7 +196,7 @@ export default function HomeScreen({ onStart, user }) {
             </div>
           </div>
         </div>
- 
+
         {/* Right: user + badge */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           {user && (
@@ -214,7 +226,7 @@ export default function HomeScreen({ onStart, user }) {
           </div>
         </div>
       </header>
- 
+
       {/* ── MAIN ── */}
       <main style={{
         flex: 1, position: "relative", zIndex: 10,
@@ -226,14 +238,14 @@ export default function HomeScreen({ onStart, user }) {
         padding: "52px 52px",
         alignItems: "center",
       }}>
- 
+
         {/* LEFT */}
         <div style={{
           paddingRight: 56,
           borderRight: "1px solid rgba(0,0,0,0.07)",
           animation: mounted ? "fadeUp 0.65s ease 0.1s both" : "none",
         }}>
- 
+
           {/* Badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -245,7 +257,7 @@ export default function HomeScreen({ onStart, user }) {
               Quiz Assessment
             </span>
           </div>
- 
+
           {/* Heading */}
           <h1 style={{
             fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 800,
@@ -263,7 +275,7 @@ export default function HomeScreen({ onStart, user }) {
               }} />
             </span>
           </h1>
- 
+
           <p style={{
             fontSize: 14, fontWeight: 400,
             color: "#64748b", lineHeight: 1.85, marginBottom: 40,
@@ -271,7 +283,7 @@ export default function HomeScreen({ onStart, user }) {
           }}>
             A timed, proctored quiz to assess your understanding. Answer carefully — every mark counts. Good luck!
           </p>
- 
+
           {/* Stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 40 }}>
             {[
@@ -292,9 +304,9 @@ export default function HomeScreen({ onStart, user }) {
               </div>
             ))}
           </div>
- 
+
           {/* CTA Button */}
-          <button className="cta-btn" onClick={onStart} style={{
+          <button className="cta-btn" onClick={handleStart} style={{
             width: "100%", padding: "17px 0",
             background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
             color: "#fff", border: "none", borderRadius: 12,
@@ -309,12 +321,24 @@ export default function HomeScreen({ onStart, user }) {
               <path d="M4 9h10M10 5l4 4-4 4" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
- 
+
+          {msg && (
+            <div style={{
+              marginTop: 12,
+              color: "#ef4444",
+              fontSize: 13,
+              fontWeight: 600,
+              textAlign: "center"
+            }}>
+              {msg}
+            </div>
+          )}
+
           <p style={{ marginTop: 16, fontSize: 11, fontWeight: 400, color: "#cbd5e1", textAlign: "center" }}>
             By starting, you agree to abide by all the rules listed.
           </p>
         </div>
- 
+
         {/* RIGHT */}
         <div style={{
           paddingLeft: 56,
@@ -333,7 +357,7 @@ export default function HomeScreen({ onStart, user }) {
               Rules & Instructions
             </h2>
           </div>
- 
+
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {rules.map((rule, i) => (
               <div
@@ -375,7 +399,7 @@ export default function HomeScreen({ onStart, user }) {
               </div>
             ))}
           </div>
- 
+
           {/* Warning */}
           <div style={{
             marginTop: 14, padding: "14px 16px", borderRadius: 12,
@@ -392,7 +416,7 @@ export default function HomeScreen({ onStart, user }) {
           </div>
         </div>
       </main>
- 
+
       {/* ── FOOTER ── */}
       <footer style={{
         position: "relative", zIndex: 10,
