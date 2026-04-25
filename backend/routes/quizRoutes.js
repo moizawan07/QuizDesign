@@ -5,6 +5,6 @@ import { protect } from "../middleware/auth.js";
 const router = express.Router();
 
 router.post("/submit", protect, submitQuiz);
-router.get("/results", protect, getAllResults);
+router.get("/results", getAllResults);
 
 export default router;
