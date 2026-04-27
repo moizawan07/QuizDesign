@@ -32,46 +32,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     answersRef.current = answers;
   }, [answers]);
 
-  // ─── Tab Switch Detection ───────────────────────────────────────
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.hidden && !submitted) {
-        setShowWarning(true);
-
-        setWarningMsg(
-          "You switched tabs during the quiz. As a result, your quiz has been automatically submitted for integrity reasons."
-        );
-
-        // auto submit
-        setTimeout(() => {
-          handleSubmit(true);
-          navigate("/"); 
-        }, 4000);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibility);
-  }, [submitted]);
-
-  // ─── Disable Copy/Paste/Right-Click ────────────────────────────
-  useEffect(() => {
-    const block = e => e.preventDefault();
-    document.addEventListener("copy", block);
-    document.addEventListener("paste", block);
-    document.addEventListener("cut", block);
-    document.addEventListener("contextmenu", block);
-    return () => {
-      document.removeEventListener("copy", block);
-      document.removeEventListener("paste", block);
-      document.removeEventListener("cut", block);
-      document.removeEventListener("contextmenu", block);
-    };
-  }, []);
-
-  // ─── Calculate Result (FIXED) ───────────────────────────────────
+  // ─── Calculate Result ───────────────────────────────────
   const calcResult = useCallback((ans) => {
     let correct = 0;
     let wrong = 0;
@@ -100,9 +61,9 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     };
   }, [questions]);
 
-  // ─── Submit Function (FIXED - uses answersRef.current) ──────────
+  // ─── Submit Function (DEFINE FIRST, BEFORE USING IN useEffect) ──────────
   const handleSubmit = useCallback(async (forcedByViolation = false, timedOut = false) => {
-    if (submitting || isSubmittingRef.current) return;
+    if (submitting || isSubmittingRef.current || submitted) return;
 
     clearInterval(timerRef.current);
     isSubmittingRef.current = true;
@@ -119,8 +80,9 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       percentage: res.percentage,
       completedAt: new Date().toISOString(),
       timeTaken: TOTAL_SECONDS - timeLeft,
+      tabViolations: tabWarnings,
       note: forcedByViolation
-        ? "Auto-submitted: Tab violation"
+        ? `Auto-submitted: Tab violation (${tabWarnings} times)`
         : timedOut
           ? "Auto-submitted: Time expired"
           : "Manual submit",
@@ -134,12 +96,72 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
     localStorage.setItem("quiz_attempted", "true");
 
-    // ✅ IMPORTANT: NO state update that causes UI re-render
-
-    // 🔥 instant redirect (NO FLASH)
+    // Redirect to home
     window.location.replace("/");
-  }, [calcResult, submitting, timeLeft]);
-  // ─── Timer Effect (FIXED - uses answersRef) ─────────────────────
+  }, [calcResult, submitting, timeLeft, tabWarnings, submitted]);
+
+  // ─── Tab Switch Detection (FIXED: First warning, second time direct submit) ───
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden && !submitted && !submitting) {
+        // ✅ INCREASE WARNING COUNTER
+        setTabWarnings(prev => {
+          const newCount = prev + 1;
+
+          if (newCount === 1) {
+            // ✅ FIRST TIME: Show warning only, don't submit
+            setShowWarning(true);
+            setWarningMsg(
+              "⚠️ Warning! Do not switch tabs. Your quiz will be automatically submitted if you switch again."
+            );
+
+            // Auto hide warning after 4 seconds
+            setTimeout(() => {
+              setShowWarning(false);
+            }, 4000);
+
+            return newCount;
+          }
+          else {
+            // ✅ SECOND TIME OR MORE: Direct submit without warning
+            setShowWarning(true);
+            setWarningMsg(
+              "❌ You switched tabs again! Your quiz has been automatically submitted for integrity reasons."
+            );
+
+            // Submit immediately
+            setTimeout(() => {
+              handleSubmit(true, false);
+            }, 3000);
+
+            return newCount;
+          }
+        });
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [submitted, submitting, handleSubmit]);
+
+  // ─── Disable Copy/Paste/Right-Click ────────────────────────────
+  useEffect(() => {
+    const block = e => e.preventDefault();
+    document.addEventListener("copy", block);
+    document.addEventListener("paste", block);
+    document.addEventListener("cut", block);
+    document.addEventListener("contextmenu", block);
+    return () => {
+      document.removeEventListener("copy", block);
+      document.removeEventListener("paste", block);
+      document.removeEventListener("cut", block);
+      document.removeEventListener("contextmenu", block);
+    };
+  }, []);
+
+  // ─── Timer Effect ─────────────────────────────────────
   useEffect(() => {
     if (submitted) return;
 
@@ -147,8 +169,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          // ✅ CRITICAL FIX: Timer finish hone par answersRef.current use hoga
-          // Ab jo answers diye hain woh sahi se count honge
           handleSubmit(false, true);
           return 0;
         }
@@ -169,6 +189,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       </div>
     );
   }
+
   const q = questions[current];
   const answered = Object.keys(answers).length;
   const isUrgent = timeLeft <= 120;
@@ -248,7 +269,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
         }} />
       </div>
 
-      {/* ── TAB WARNING TOAST ── */}
+      {/* ── TAB WARNING TOAST (Dynamic based on warning count) ── */}
       {showWarning && (
         <div className="warning-toast" style={{
           position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
@@ -259,18 +280,19 @@ export default function QuizScreen({ user, onSubmitComplete }) {
           boxShadow: "0 10px 40px rgba(239,68,68,0.35)",
           display: "flex", alignItems: "center", gap: 12,
         }}>
-          <span>⚠️</span>
           {warningMsg}
-          <button onClick={() => setShowWarning(false)}
-            style={{
-              background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", borderRadius: 6,
-              padding: "4px 10px", cursor: "pointer", fontSize: 11, fontWeight: 600, transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.4)"}
-            onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.25)"}
-          >
-            Dismiss
-          </button>
+          {tabWarnings === 1 && (
+            <button onClick={() => setShowWarning(false)}
+              style={{
+                background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", borderRadius: 6,
+                padding: "4px 10px", cursor: "pointer", fontSize: 11, fontWeight: 600, transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.4)"}
+              onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.25)"}
+            >
+              Dismiss
+            </button>
+          )}
         </div>
       )}
 
@@ -342,7 +364,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
       {/* ── MAIN CONTENT ── */}
       <main style={{ flex: 1, position: "relative", zIndex: 10, padding: "40px 150px" }}>
-        <div style={{margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 400px", gap: 32 }}>
+        <div style={{ margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 400px", gap: 32 }}>
 
           {/* ── QUESTION PANEL ── */}
           <div>
@@ -522,7 +544,15 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                   Question Guide
                 </h3>
                 <div style={{
-                  display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: 6,
+
+                  // ✅ SCROLL FIX
+                  maxHeight: "300px",   // apni need ke hisaab se adjust kar sakte ho
+                  overflowY: "auto",
+                  paddingRight: "4px",  // scrollbar space ke liye
+                  scrollbarWidth: "thin",
                 }}>
                   {questions.map((q2, i) => {
                     const isAnswered = !!answers[q2.id];
@@ -548,7 +578,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
               {/* Legend */}
               <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
-                <div style={{ display: "flex", flexDirection: "row", gap: 20}}>
+                <div style={{ display: "flex", flexDirection: "row", gap: 20 }}>
                   {[
                     { color: "#10b981", label: "Current" },
                     { color: "#10b981", label: "Answered", opacity: 0.3 },

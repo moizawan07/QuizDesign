@@ -8,6 +8,7 @@ export const QUIZ_CONFIG = {
 };
 
 export const WebDeveloperQuestions = [
+  // FIRST 25 (YOUR EXISTING QUESTIONS - KEPT AS IS)
   {
     id: 1,
     professional: "Web Development",
@@ -283,6 +284,286 @@ export const WebDeveloperQuestions = [
     ],
     answer: "Improves readability of async code",
   },
+
+  // ==============================================
+  // NEXT 25 QUESTIONS (3 EASY + 15 MEDIUM + 7 HARD)
+  // ==============================================
+
+  // ---------- EASY (3 Questions) ----------
+  {
+    id: 26,
+    professional: "Web Development",
+    question: "Which command starts a new Node.js project?",
+    options: ["npm start", "npm init", "node init", "npm create"],
+    answer: "npm init",
+  },
+  {
+    id: 27,
+    professional: "Web Development",
+    question: "What does the `res.send()` method do in Express?",
+    options: [
+      "Sends a file to the client",
+      "Sends a response to the client",
+      "Redirects the client",
+      "Ends the request without response"
+    ],
+    answer: "Sends a response to the client",
+  },
+  {
+    id: 28,
+    professional: "Web Development",
+    question: "Which React Hook is used to reference a DOM element directly?",
+    options: ["useState", "useEffect", "useRef", "useContext"],
+    answer: "useRef",
+  },
+
+  // ---------- MEDIUM (15 Questions) ----------
+  {
+    id: 29,
+    professional: "Web Development",
+    question: "What is the output of: console.log(typeof null); in JavaScript?",
+    options: ["null", "undefined", "object", "number"],
+    answer: "object",
+  },
+  {
+    id: 30,
+    professional: "Web Development",
+    question: "What does the `process.env` object contain in Node.js?",
+    options: [
+      "Command line arguments",
+      "Environment variables",
+      "Running process ID",
+      "Memory usage stats"
+    ],
+    answer: "Environment variables",
+  },
+  {
+    id: 31,
+    professional: "Web Development",
+    question: "Which status code means 'Resource Not Found'?",
+    options: ["200", "301", "404", "500"],
+    answer: "404",
+  },
+  {
+    id: 32,
+    professional: "Web Development",
+    question: "What does CORS protect against?",
+    options: [
+      "SQL injection",
+      "Cross-origin requests from malicious websites",
+      "Password theft",
+      "XSS attacks"
+    ],
+    answer: "Cross-origin requests from malicious websites",
+  },
+  {
+    id: 33,
+    professional: "Web Development",
+    question: "What is the default behavior of `useEffect` when no dependency array is provided?",
+    options: [
+      "Runs only once",
+      "Runs after every render",
+      "Never runs",
+      "Runs before render"
+    ],
+    answer: "Runs after every render",
+  },
+  {
+    id: 34,
+    professional: "Web Development",
+    question: "What is the purpose of `express.static()`?",
+    options: [
+      "Serve static files like CSS and images",
+      "Parse JSON bodies",
+      "Handle authentication",
+      "Connect to MongoDB"
+    ],
+    answer: "Serve static files like CSS and images",
+  },
+  {
+    id: 35,
+    professional: "Web Development",
+    question: "Which of the following is a NoSQL database?",
+    options: ["MySQL", "PostgreSQL", "MongoDB", "SQLite"],
+    answer: "MongoDB",
+  },
+  {
+    id: 36,
+    professional: "Web Development",
+    question: "What does the `__dirname` variable contain in Node.js?",
+    options: [
+      "Current file name",
+      "Current directory path",
+      "Root directory path",
+      "Global objects"
+    ],
+    answer: "Current directory path",
+  },
+  {
+    id: 37,
+    professional: "Web Development",
+    question: "What is the purpose of `pre` middleware in Mongoose?",
+    options: [
+      "Run after a document is saved",
+      "Run before a specific operation",
+      "Run only on errors",
+      "Run during aggregation"
+    ],
+    answer: "Run before a specific operation",
+  },
+  {
+    id: 38,
+    professional: "Web Development",
+    question: "What does `localStorage.setItem('key', 'value')` do?",
+    options: [
+      "Saves data to server",
+      "Saves data to browser storage",
+      "Creates a cookie",
+      "Stores data temporarily in memory"
+    ],
+    answer: "Saves data to browser storage",
+  },
+  {
+    id: 39,
+    professional: "Web Development",
+    question: "What is the difference between `let` and `var`?",
+    options: [
+      "let is function-scoped, var is block-scoped",
+      "var is block-scoped, let is function-scoped",
+      "let is block-scoped, var is function-scoped",
+      "No difference"
+    ],
+    answer: "let is block-scoped, var is function-scoped",
+  },
+  {
+    id: 40,
+    professional: "Web Development",
+    question: "What does the `findOneAndUpdate` method do in Mongoose?",
+    options: [
+      "Finds and deletes a document",
+      "Finds a document and updates it",
+      "Updates multiple documents",
+      "Inserts a new document"
+    ],
+    answer: "Finds a document and updates it",
+  },
+  {
+    id: 41,
+    professional: "Web Development",
+    question: "Which HTTP method should be used to delete a resource?",
+    options: ["GET", "POST", "PUT", "DELETE"],
+    answer: "DELETE",
+  },
+  {
+    id: 42,
+    professional: "Web Development",
+    question: "What does `npm run build` typically do in a React app?",
+    options: [
+      "Starts development server",
+      "Creates a production-ready bundle",
+      "Installs dependencies",
+      "Runs tests"
+    ],
+    answer: "Creates a production-ready bundle",
+  },
+  {
+    id: 43,
+    professional: "Web Development",
+    question: "What is the purpose of `useCallback` Hook?",
+    options: [
+      "Memoize entire components",
+      "Memoize functions to prevent recreation",
+      "Memoize values",
+      "Handle side effects"
+    ],
+    answer: "Memoize functions to prevent recreation",
+  },
+
+  // ---------- HARD (7 Questions - Advanced Theory) ----------
+  {
+    id: 44,
+    professional: "Web Development",
+    question: "What is the event loop in Node.js?",
+    options: [
+      "A loop that runs synchronous code",
+      "A mechanism that handles asynchronous callbacks",
+      "A database connection pool",
+      "A routing system"
+    ],
+    answer: "A mechanism that handles asynchronous callbacks",
+  },
+  {
+    id: 45,
+    professional: "Web Development",
+    question: "What causes a memory leak in a React component?",
+    options: [
+      "Using useState too many times",
+      "Not cleaning up subscriptions or timers in useEffect",
+      "Using too many components",
+      "Large CSS files"
+    ],
+    answer: "Not cleaning up subscriptions or timers in useEffect",
+  },
+  {
+    id: 46,
+    professional: "Web Development",
+    question: "What is the difference between `process.nextTick()` and `setImmediate()`?",
+    options: [
+      "nextTick runs before I/O events, setImmediate after",
+      "nextTick runs after I/O, setImmediate before",
+      "Both are exactly the same",
+      "setImmediate runs before setTimeout"
+    ],
+    answer: "nextTick runs before I/O events, setImmediate after",
+  },
+  {
+    id: 47,
+    professional: "Web Development",
+    question: "What is the 'waterfall' problem in Promise chaining and how is it solved?",
+    options: [
+      "Too many nested callbacks; solved by async/await",
+      "Slow execution; solved by Promise.all",
+      "Memory leaks; solved by cleanup functions",
+      "Unhandled rejections; solved by try/catch"
+    ],
+    answer: "Slow execution; solved by Promise.all",
+  },
+  {
+    id: 48,
+    professional: "Web Development",
+    question: "In Express, why should you always call `next()` in middleware?",
+    options: [
+      "To end the response cycle",
+      "To pass control to the next middleware",
+      "To restart the request",
+      "To throw an error"
+    ],
+    answer: "To pass control to the next middleware",
+  },
+  {
+    id: 49,
+    professional: "Web Development",
+    question: "What is the 'stale closure' problem in React Hooks?",
+    options: [
+      "State not updating because of old prop values trapped in a closure",
+      "Components not rendering at all",
+      "Too many re-renders",
+      "Memory leaks from useEffect"
+    ],
+    answer: "State not updating because of old prop values trapped in a closure",
+  },
+  {
+    id: 50,
+    professional: "Web Development",
+    question: "What is the main security risk of storing JWT in localStorage?",
+    options: [
+      "Token expiration issues",
+      "Vulnerable to XSS attacks",
+      "Vulnerable to CSRF attacks",
+      "Slow performance"
+    ],
+    answer: "Vulnerable to XSS attacks",
+  }
 ];
 
 
