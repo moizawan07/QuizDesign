@@ -5,14 +5,9 @@ import { quizAPI } from "../utils/api";
 
 export default function ResultsTablePage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
   const [results, setResults] = useState([]);
   const [tableLoading, setTableLoading] = useState(true);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!loading && !user) navigate("/");
-  }, [user, loading]);
 
   useEffect(() => {
     fetchResults();
@@ -31,36 +26,41 @@ export default function ResultsTablePage() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#f4f7fb",
-      fontFamily: "'Poppins', sans-serif"
-    }}>
-
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f4f7fb",
+        fontFamily: "'Poppins', sans-serif",
+      }}
+    >
       {/* HEADER (NEW THEME) */}
-      <header style={{
-        background: "linear-gradient(135deg, #10b981, #059669)",
-        padding: "16px 28px",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        color: "#fff",
-        fontWeight: 800,
-        fontSize: 16,
-        boxShadow: "0 10px 25px rgba(16,185,129,0.25)"
-      }}>
+      <header
+        style={{
+          background: "linear-gradient(135deg, #10b981, #059669)",
+          padding: "16px 28px",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          color: "#fff",
+          fontWeight: 800,
+          fontSize: 16,
+          boxShadow: "0 10px 25px rgba(16,185,129,0.25)",
+        }}
+      >
         📊 QuizPro Results Dashboard
       </header>
 
       <main style={{ margin: "0 auto", padding: "30px 100px" }}>
-
         {/* TITLE */}
+        <div className="flex flex-row justify-between items-center">
         <div style={{ marginBottom: 25 }}>
-          <h1 style={{
-            fontSize: 28,
-            fontWeight: 900,
-            color: "#0f172a"
-          }}>
+          <h1
+            style={{
+              fontSize: 28,
+              fontWeight: 900,
+              color: "#0f172a",
+            }}
+          >
             Results Overview
           </h1>
           <p style={{ color: "#64748b", fontSize: 13 }}>
@@ -68,133 +68,10 @@ export default function ResultsTablePage() {
           </p>
         </div>
 
-        {/* ERROR */}
-        {error && (
-          <div style={{
-            background: "rgba(239,68,68,0.08)",
-            color: "#dc2626",
-            padding: 14,
-            borderRadius: 12,
-            marginBottom: 20,
-            fontWeight: 600
-          }}>
-            ⚠ {error}
-          </div>
-        )}
-
-        {/* LOADING */}
-        {tableLoading ? (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 60,
-            gap: 12
-          }}>
-            <div className="loader" />
-            <p style={{ color: "#64748b" }}>Loading results...</p>
-          </div>
-        ) : results.length === 0 ? (
-          <div style={{
-            background: "#fff",
-            padding: 50,
-            textAlign: "center",
-            borderRadius: 16,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.05)"
-          }}>
-            📭 No results found
-          </div>
-        ) : (
-
-          /* SAME TABLE STRUCTURE (NO CHANGE) */
-          <div style={{
-            background: "#fff",
-            borderRadius: 16,
-            overflow: "hidden",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-            border: "1px solid #e2e8f0"
-          }}>
-
-            <table style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: 13
-            }}>
-
-              <thead>
-                <tr style={{
-                  background: "linear-gradient(135deg, #10b981, #059669)",
-                  color: "#fff"
-                }}>
-                  {["Name","Email","Correct","Wrong","Unattempted","Percentage","Date"].map((h) => (
-                    <th key={h} style={{
-                      padding: 18,
-                      textAlign: "left",
-                      fontWeight: 800,
-                      letterSpacing: 0.5
-                    }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {results.map((r, i) => (
-                  <tr
-                    key={r._id}
-                    style={{
-                      borderTop: "1px solid #e2e8f0",
-                      background: i % 2 === 0 ? "#fff" : "#f8fafc",
-                      transition: "0.2s"
-                    }}
-                    onMouseEnter={(e) =>
-                      e.currentTarget.style.background = "#ecfdf5"
-                    }
-                    onMouseLeave={(e) =>
-                      e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#f8fafc"
-                    }
-                  >
-
-                    <td style={cellBold}>{r.userId?.name || "N/A"}</td>
-                    <td style={cell}>{r.userId?.email}</td>
-
-                    <td style={{ ...cell, color: "#10b981", fontWeight: 700 }}>
-                      {r.correct}
-                    </td>
-
-                    <td style={{ ...cell, color: "#ef4444", fontWeight: 700 }}>
-                      {r.wrong}
-                    </td>
-
-                    <td style={{ ...cell, color: "#f59e0b", fontWeight: 700 }}>
-                      {r.unattempted}
-                    </td>
-
-                    <td style={{
-                      fontWeight: 800,
-                      color: r.percentage >= 60 ? "#10b981" : "#ef4444"
-                    }}>
-                      {r.percentage}%
-                    </td>
-
-                    <td style={{ fontSize: 12, color: "#64748b" }}>
-                      {new Date(r.completedAt).toLocaleString()}
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-
-            </table>
-          </div>
-        )}
-
-        {/* BACK BUTTON */}
+             {/* BACK BUTTON */}
         <button
           onClick={() => navigate("/")}
           style={{
-            marginTop: 22,
             padding: "12px 18px",
             borderRadius: 12,
             border: "none",
@@ -202,11 +79,210 @@ export default function ResultsTablePage() {
             color: "#fff",
             fontWeight: 700,
             cursor: "pointer",
-            boxShadow: "0 10px 20px rgba(16,185,129,0.25)"
+            boxShadow: "0 10px 20px rgba(16,185,129,0.25)",
           }}
         >
           ← Back
         </button>
+
+           </div>
+
+        {/* ERROR */}
+        {error && (
+          <div
+            style={{
+              background: "rgba(239,68,68,0.08)",
+              color: "#dc2626",
+              padding: 14,
+              borderRadius: 12,
+              marginBottom: 20,
+              fontWeight: 600,
+            }}
+          >
+            ⚠ {error}
+          </div>
+        )}
+
+        {/* LOADING */}
+        {tableLoading ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: 60,
+              gap: 12,
+            }}
+          >
+            <div className="loader" />
+            <p style={{ color: "#64748b" }}>Loading results...</p>
+          </div>
+        ) : results.length === 0 ? (
+          <div
+            style={{
+              background: "#fff",
+              padding: 50,
+              textAlign: "center",
+              borderRadius: 16,
+              boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            }}
+          >
+            📭 No results found
+          </div>
+        ) : (
+          /* SAME TABLE STRUCTURE (NO CHANGE) */
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 7,
+              overflow: "hidden",
+              boxShadow: "0 10px 10px rgba(0,0,0,0.06)",
+            }}
+          >
+            <div
+              style={{
+                overflowX: "auto",
+              }}
+            >
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "separate",
+                  borderSpacing: 0,
+                  fontSize: 14,
+                  minWidth: "1100px",
+                }}
+              >
+                <thead>
+                  <tr
+                    style={{
+                      background: "linear-gradient(135deg, #10b981, #059669)",
+                      color: "#fff",
+                    }}
+                  >
+                    {[
+                      "Name",
+                      "Email",
+                      "Correct",
+                      "Wrong",
+                      "Unattempted",
+                      "Percentage",
+                      "Note",
+                      "Date",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: "20px 18px",
+                          textAlign: "left",
+                          fontWeight: 800,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {results.map((r, i) => (
+                    <tr
+                      key={r._id}
+                      style={{
+                        borderBottom: "1px solid #f1f5f9",
+                        background: i % 2 === 0 ? "#ffffff" : "#f8fafc",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#f8fafc";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          i % 2 === 0 ? "#ffffff" : "#f8fafc";
+                      }}
+                    >
+                      <td style={cellBold}>{r.userId?.name || "N/A"}</td>
+
+                      <td style={cell}>{r.userId?.email}</td>
+
+                      <td style={cell}>
+                        <span style={successBadge}>{r.correct}</span>
+                      </td>
+
+                      <td style={cell}>
+                        <span style={dangerBadge}>{r.wrong}</span>
+                      </td>
+
+                      <td style={cell}>
+                        <span style={warningBadge}>{r.unattempted}</span>
+                      </td>
+
+                      <td style={cell}>
+                        <span
+                          style={{
+                            padding: "8px 12px",
+                            borderRadius: 5,
+                            fontWeight: 800,
+                            fontSize: 12,
+                            background:
+                              r.percentage >= 60
+                                ? "rgba(16,185,129,0.12)"
+                                : "rgba(239,68,68,0.12)",
+                            color: r.percentage >= 60 ? "#059669" : "#dc2626",
+                          }}
+                        >
+                          {r.percentage}%
+                        </span>
+                      </td>
+
+                      {/* NOTE COLUMN */}
+                      <td style={cell}>
+                        <div
+                          title={r.note || "No note"}
+                          style={{
+                            maxWidth: "220px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            cursor: "pointer",
+                            color: "#2563eb",
+                            fontWeight: 600,
+                            fontSize: 12,
+                          }}
+                        >
+                          {r.note
+                            ? r.note.length > 30
+                              ? `${r.note.slice(0, 30)}...`
+                              : r.note
+                            : "No note"}
+                        </div>
+                      </td>
+
+                      <td style={cell}>
+                        <div
+                          style={{
+                            background: "#f8fafc",
+                            padding: "8px 10px",
+                            borderRadius: 10,
+                            fontSize: 12,
+                            color: "#64748b",
+                            display: "inline-block",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {new Date(r.completedAt).toLocaleString()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
       </main>
 
@@ -223,10 +299,41 @@ export default function ResultsTablePage() {
           animation: spin 0.8s linear infinite;
         }
       `}</style>
-
     </div>
   );
 }
 
-const cell = { padding: 14, color: "#334155" };
-const cellBold = { padding: 14, fontWeight: 700, color: "#0f172a" };
+const cell = {
+  padding: "16px 18px",
+  color: "#334155",
+};
+
+const cellBold = {
+  padding: "16px 18px",
+  fontWeight: 700,
+  color: "#0f172a",
+};
+
+const successBadge = {
+  background: "rgba(16,185,129,0.12)",
+  color: "#059669",
+  padding: "7px 12px",
+  borderRadius: 5,
+  fontWeight: 700,
+};
+
+const dangerBadge = {
+  background: "rgba(239,68,68,0.12)",
+  color: "#dc2626",
+  padding: "7px 12px",
+  borderRadius: 5,
+  fontWeight: 700,
+};
+
+const warningBadge = {
+  background: "rgba(245,158,11,0.12)",
+  color: "#d97706",
+  padding: "7px 12px",
+  borderRadius: 5,
+  fontWeight: 700,
+};
