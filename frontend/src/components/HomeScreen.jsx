@@ -332,7 +332,7 @@ export default function HomeScreen({ onStart, user }) {
               paddingBlock: 5,
               paddingInline: 8,
               // display: "inline-block",
-            }} className="bg-red-200">
+            }}>
               {msg}
             </div>
           )}
