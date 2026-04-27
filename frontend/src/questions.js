@@ -11,179 +11,280 @@ export const WebDeveloperQuestions = [
   {
     id: 1,
     professional: "Web Development",
-    question: "What does HTML stand for?",
-    options: ["HyperText Markup Language", "HighText Machine Language", "HyperText and links Markup Language", "None of these"],
-    answer: "HyperText Markup Language",
+    question: "Which semantic HTML tag is best used for the main navigation menu?",
+    options: ["<menu>", "<navigation>", "<nav>", "<section>"],
+    answer: "<nav>",
   },
   {
     id: 2,
     professional: "Web Development",
-    question: "Which language is used for styling web pages?",
-    options: ["HTML", "CSS", "JavaScript", "Python"],
-    answer: "CSS",
+    question: "Which semantic tag should be used for self-contained content like blog posts?",
+    options: ["<section>", "<article>", "<aside>", "<main>"],
+    answer: "<article>",
   },
   {
     id: 3,
     professional: "Web Development",
-    question: "What does CSS stand for?",
-    options: ["Cascading Style Sheets", "Creative Style Sheets", "Computer Style Sheets", "Colorful Style Sheets"],
-    answer: "Cascading Style Sheets",
+    question: "What is the purpose of the 'defer' attribute in a script tag?",
+    options: [
+      "Stops script execution",
+      "Loads script after HTML parsing",
+      "Loads script before HTML parsing",
+      "Makes script async"
+    ],
+    answer: "Loads script after HTML parsing",
   },
   {
     id: 4,
     professional: "Web Development",
-    question: "Inside which HTML element do we put JavaScript?",
-    options: ["<js>", "<scripting>", "<script>", "<javascript>"],
-    answer: "<script>",
+    question: "What is a closure in JavaScript?",
+    options: [
+      "A function with its lexical scope",
+      "A loop statement",
+      "A callback function",
+      "An object method"
+    ],
+    answer: "A function with its lexical scope",
   },
   {
     id: 5,
     professional: "Web Development",
-    question: "What is the correct syntax for referring to an external script called 'app.js'?",
-    options: ['<script href="app.js">', '<script src="app.js">', '<script name="app.js">', '<script file="app.js">'],
-    answer: '<script src="app.js">',
+    question: "What does Promise.all() do?",
+    options: [
+      "Runs promises one by one",
+      "Waits for all promises to resolve",
+      "Ignores rejected promises",
+      "Runs only one promise"
+    ],
+    answer: "Waits for all promises to resolve",
   },
   {
     id: 6,
     professional: "Web Development",
-    question: "Which of the following is NOT a JavaScript data type?",
-    options: ["String", "Boolean", "Float", "Undefined"],
-    answer: "Float",
+    question: "What is the prototype in JavaScript?",
+    options: [
+      "A CSS feature",
+      "A way to inherit properties and methods",
+      "A function parameter",
+      "A React hook"
+    ],
+    answer: "A way to inherit properties and methods",
   },
   {
     id: 7,
     professional: "Web Development",
-    question: "How do you declare a JavaScript variable?",
-    options: ["variable x;", "v x;", "var x;", "int x;"],
-    answer: "var x;",
+    question: "What is the main purpose of useState in React?",
+    options: [
+      "Managing side effects",
+      "Managing state",
+      "Managing API calls",
+      "Managing routes"
+    ],
+    answer: "Managing state",
   },
   {
     id: 8,
     professional: "Web Development",
-    question: "Which operator is used to assign a value to a variable?",
-    options: ["*", "=", "-", "x"],
-    answer: "=",
+    question: "When does useEffect run if dependency array is empty?",
+    options: [
+      "On every render",
+      "Only once after initial render",
+      "Before render",
+      "Never"
+    ],
+    answer: "Only once after initial render",
   },
   {
     id: 9,
     professional: "Web Development",
-    question: "What will the following return: Boolean(10 > 9)?",
-    options: ["true", "false", "NaN", "undefined"],
-    answer: "true",
+    question: "What is the purpose of React.memo?",
+    options: [
+      "Managing state",
+      "Preventing unnecessary re-renders",
+      "Handling API calls",
+      "Routing"
+    ],
+    answer: "Preventing unnecessary re-renders",
   },
   {
     id: 10,
     professional: "Web Development",
-    question: "What is the correct way to write a JavaScript array?",
-    options: ['var colors = "red", "green", "blue"', 'var colors = (1:"red", 2:"green", 3:"blue")', 'var colors = ["red", "green", "blue"]', 'var colors = {red, green, blue}'],
-    answer: 'var colors = ["red", "green", "blue"]',
+    question: "What problem does useContext solve?",
+    options: [
+      "State persistence",
+      "Prop drilling",
+      "Routing issue",
+      "API caching"
+    ],
+    answer: "Prop drilling",
   },
   {
     id: 11,
     professional: "Web Development",
-    question: "Which HTML attribute is used to define inline styles?",
-    options: ["class", "font", "styles", "style"],
-    answer: "style",
+    question: "What is event bubbling in JavaScript?",
+    options: [
+      "Event moves from child to parent",
+      "Event moves from parent to child",
+      "Event stops execution",
+      "Event duplicates"
+    ],
+    answer: "Event moves from child to parent",
   },
   {
     id: 12,
     professional: "Web Development",
-    question: "What does the 'z-index' CSS property control?",
-    options: ["Zoom level", "Stacking order of elements", "Z-axis rotation", "Zigzag border"],
-    answer: "Stacking order of elements",
+    question: "Which hook is best for memoizing expensive calculations?",
+    options: ["useEffect", "useMemo", "useRef", "useState"],
+    answer: "useMemo",
   },
   {
     id: 13,
     professional: "Web Development",
-    question: "What is React primarily used for?",
-    options: ["Database Management", "Server-side scripting", "Building user interfaces", "Styling web pages"],
-    answer: "Building user interfaces",
+    question: "What is middleware in Express.js?",
+    options: [
+      "Database layer",
+      "Functions between request and response cycle",
+      "Frontend handler",
+      "Authentication token"
+    ],
+    answer: "Functions between request and response cycle",
   },
   {
     id: 14,
     professional: "Web Development",
-    question: "What is JSX?",
-    options: ["A JavaScript framework", "A CSS preprocessor", "A syntax extension for JavaScript", "A database query language"],
-    answer: "A syntax extension for JavaScript",
+    question: "Which middleware is used to parse JSON in Express?",
+    options: [
+      "express.json()",
+      "bodyParser()",
+      "jsonParser()",
+      "parse.json()"
+    ],
+    answer: "express.json()",
   },
   {
     id: 15,
     professional: "Web Development",
-    question: "Which hook is used to manage state in React functional components?",
-    options: ["useEffect", "useState", "useContext", "useRef"],
-    answer: "useState",
+    question: "What is the role of a controller in MVC architecture?",
+    options: [
+      "Database connection",
+      "Business logic handling",
+      "Routing only",
+      "Authentication only"
+    ],
+    answer: "Business logic handling",
   },
   {
     id: 16,
     professional: "Web Development",
-    question: "What does the '===' operator check in JavaScript?",
-    options: ["Value only", "Type only", "Value and type", "Neither"],
-    answer: "Value and type",
+    question: "What does next() do in Express middleware?",
+    options: [
+      "Ends response",
+      "Moves to next middleware",
+      "Restarts request",
+      "Throws error"
+    ],
+    answer: "Moves to next middleware",
   },
   {
     id: 17,
     professional: "Web Development",
-    question: "What is the purpose of the 'useEffect' hook in React?",
-    options: ["To manage state", "To handle side effects", "To create context", "To handle routing"],
-    answer: "To handle side effects",
+    question: "What is MongoDB populate() used for?",
+    options: [
+      "Insert documents",
+      "Join referenced documents",
+      "Delete relations",
+      "Update schema"
+    ],
+    answer: "Join referenced documents",
   },
   {
     id: 18,
     professional: "Web Development",
-    question: "What does the CSS 'flexbox' property help with?",
-    options: ["Animation", "Typography", "Flexible layout design", "Color schemes"],
-    answer: "Flexible layout design",
+    question: "Which MongoDB relationship stores multiple ObjectIds in one document?",
+    options: [
+      "One-to-One",
+      "One-to-Many",
+      "Many-to-One",
+      "Embedded relation"
+    ],
+    answer: "One-to-Many",
   },
   {
     id: 19,
     professional: "Web Development",
-    question: "Which HTML5 element is used to define navigation links?",
-    options: ["<nav>", "<navigation>", "<navigate>", "<menu>"],
-    answer: "<nav>",
+    question: "What is JWT mainly used for?",
+    options: [
+      "Database queries",
+      "Authentication",
+      "Styling",
+      "Caching"
+    ],
+    answer: "Authentication",
   },
   {
     id: 20,
     professional: "Web Development",
-    question: "What is the use of localStorage in browsers?",
-    options: ["Storing data on the server", "Storing session cookies", "Storing data in the browser persistently", "Caching images"],
-    answer: "Storing data in the browser persistently",
+    question: "What HTTP status code is commonly used for unauthorized access?",
+    options: ["200", "201", "401", "500"],
+    answer: "401",
   },
   {
     id: 21,
     professional: "Web Development",
-    question: "What is the purpose of 'props' in React?",
-    options: ["State management", "Passing data to components", "Styling components", "Routing between pages"],
-    answer: "Passing data to components",
+    question: "What is global error handling in Express?",
+    options: [
+      "Handling all app errors in one middleware",
+      "Handling frontend errors",
+      "Database backup",
+      "Authentication process"
+    ],
+    answer: "Handling all app errors in one middleware",
   },
   {
     id: 22,
     professional: "Web Development",
-    question: "Which method converts a JSON string to a JavaScript object?",
-    options: ["JSON.parse()", "JSON.stringify()", "JSON.convert()", "JSON.toObject()"],
-    answer: "JSON.parse()",
+    question: "What does bcrypt do?",
+    options: [
+      "Encrypt API calls",
+      "Hash passwords",
+      "Store sessions",
+      "Generate tokens"
+    ],
+    answer: "Hash passwords",
   },
   {
     id: 23,
     professional: "Web Development",
-    question: "Which method converts a JavaScript object to a JSON string?",
-    options: ["JSON.parse()", "JSON.stringify()", "JSON.serialize()", "JSON.format()"],
-    answer: "JSON.stringify()",
+    question: "Which method is used to create a new document in Mongoose?",
+    options: ["find()", "save()", "populate()", "aggregate()"],
+    answer: "save()",
   },
   {
     id: 24,
     professional: "Web Development",
-    question: "What does 'DOM' stand for in web development?",
-    options: ["Document Object Model", "Data Object Management", "Dynamic Output Module", "Document Output Model"],
-    answer: "Document Object Model",
+    question: "What is the purpose of express.Router()?",
+    options: [
+      "Create modular routes",
+      "Connect database",
+      "Handle authentication",
+      "Handle errors"
+    ],
+    answer: "Create modular routes",
   },
   {
     id: 25,
     professional: "Web Development",
-    question: "Which CSS framework uses utility-first classes?",
-    options: ["Bootstrap", "Bulma", "Tailwind CSS", "Foundation"],
-    answer: "Tailwind CSS",
+    question: "What is the main benefit of using async/await in Node.js?",
+    options: [
+      "Makes code synchronous",
+      "Improves readability of async code",
+      "Stops promises",
+      "Avoids database usage"
+    ],
+    answer: "Improves readability of async code",
   },
 ];
+
 
 export const UiUxQuestions = [
   {

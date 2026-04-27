@@ -325,10 +325,14 @@ export default function HomeScreen({ onStart, user }) {
             <div style={{
               marginTop: 12,
               color: "#ef4444",
-              fontSize: 13,
+              fontSize: 11,
               fontWeight: 600,
-              textAlign: "center"
-            }}>
+              textAlign: "center",
+              borderRadius: 4,
+              paddingBlock: 5,
+              paddingInline: 8,
+              // display: "inline-block",
+            }} className="bg-red-200">
               {msg}
             </div>
           )}
