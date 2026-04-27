@@ -505,7 +505,7 @@ export const WebDeveloperQuestions = [
     answer: "Not cleaning up subscriptions or timers in useEffect",
   },
   {
-    id: 47,
+    id: 46,
     professional: "Web Development",
     question: "In React, what is the difference between useEffect and useLayoutEffect?",
     options: [
