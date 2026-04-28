@@ -8,7 +8,9 @@ export default function QuizPage() {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && !user) {
+    const quizAttempt = JSON.parse(localStorage.getItem("quiz_attempted", false));
+
+    if (quizAttempt || (!loading && !user)) {
       navigate("/");
     }
   }, [user, loading, navigate]);
@@ -19,12 +21,29 @@ export default function QuizPage() {
 
   if (loading || !user) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-bg)" }}>
-        <div style={{ width: 56, height: 56, border: "4px solid var(--color-border)", borderTopColor: "var(--color-primary)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--color-bg)",
+        }}
+      >
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            border: "4px solid var(--color-border)",
+            borderTopColor: "var(--color-primary)",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
-  return <QuizScreen user={user} onSubmitComplete={handleSubmitComplete} />;
+  return <QuizScreen user={user} />;
 }
