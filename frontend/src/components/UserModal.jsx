@@ -192,7 +192,7 @@ export default function UserModal({ onComplete, onClose }) {
           }}
         >
           {field("name", "Full Name", "Enter name")}
-          {field("idNo", "ID No", "Enter ID")}
+          {field("idNo", "ID No", "Enter ID", "number")}
         </div>
 
         {field("email", "Email Address", "you@example.com", "email")}
