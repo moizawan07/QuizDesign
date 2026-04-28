@@ -6,19 +6,11 @@ import { useEffect } from "react";
 export default function QuizPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const token = localStorage.getItem("auth_token");
-  const quizCompleted = localStorage.getItem("quiz_attempted");
-  if (!token) {
-    navigate("/");
-  }
-  console.log(token);
-  
-  if (token && quizCompleted === "true") {
-    navigate("/");
-  }
 
   useEffect(() => {
-    const quizAttempt = JSON.parse(localStorage.getItem("quiz_attempted", false));
+    const quizAttempt = JSON.parse(
+      localStorage.getItem("quiz_attempted", false),
+    );
 
     if (quizAttempt || (!loading && !user)) {
       navigate("/");
