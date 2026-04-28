@@ -507,26 +507,26 @@ export const WebDeveloperQuestions = [
   {
     id: 46,
     professional: "Web Development",
-    question: "What is the difference between `process.nextTick()` and `setImmediate()`?",
+    question: "In React, what is the difference between useEffect and useLayoutEffect?",
     options: [
-      "nextTick runs before I/O events, setImmediate after",
-      "nextTick runs after I/O, setImmediate before",
-      "Both are exactly the same",
-      "setImmediate runs before setTimeout"
+      "useEffect runs after paint, useLayoutEffect runs before paint",
+      "useEffect runs before paint, useLayoutEffect runs after paint",
+      "Both run at exactly the same time",
+      "useLayoutEffect is deprecated, always use useEffect"
     ],
-    answer: "nextTick runs before I/O events, setImmediate after",
+    answer: "useEffect runs after paint, useLayoutEffect runs before paint",
   },
   {
     id: 47,
     professional: "Web Development",
-    question: "What is the 'waterfall' problem in Promise chaining and how is it solved?",
+    question: "In React, what happens when you call setState (or setter from useState) with the same value as the current state?",
     options: [
-      "Too many nested callbacks; solved by async/await",
-      "Slow execution; solved by Promise.all",
-      "Memory leaks; solved by cleanup functions",
-      "Unhandled rejections; solved by try/catch"
+      "Component re-renders always",
+      "Component does NOT re-render if value is the same (for primitive types)",
+      "Component re-renders twice",
+      "Throws an error"
     ],
-    answer: "Slow execution; solved by Promise.all",
+    answer: "Component does NOT re-render if value is the same (for primitive types)",
   },
   {
     id: 48,
@@ -712,4 +712,3 @@ export const UiUxQuestions = [
 
 // Combine all questions based on professional field
 export const ALL_QUESTIONS = [...WebDeveloperQuestions, ...UiUxQuestions];
- 
