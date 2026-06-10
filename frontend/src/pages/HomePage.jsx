@@ -1,42 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useSelector } from "react-redux";
 import HomeScreen from "../components/HomeScreen";
-import UserModal from "../components/UserModal";
-import { useState } from "react";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { user, login } = useAuth();
-  const [showModal, setShowModal] = useState(false);
+  const { user } = useSelector(state => state.auth);
 
   const handleStartClick = () => {
     if (user) {
+      // User is logged in, QuizSelection is handled inside HomeScreen now
       navigate("/quiz");
     } else {
-      setShowModal(true);
+      // If not logged in, go to unified Login Page
+      navigate("/login");
     }
-  };
-
-  const handleModalComplete = (userData, token) => {
-    login(userData, token);
-    setShowModal(false);
-    navigate("/quiz");
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
   };
 
   return (
     <>
       <HomeScreen onStart={handleStartClick} user={user} />
-
-      {showModal && (
-        <UserModal
-          onComplete={handleModalComplete}
-          onClose={handleCloseModal}   // ✅ FIXED HERE
-        />
-      )}
     </>
   );
 }

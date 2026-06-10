@@ -1,5 +1,9 @@
 import { QUIZ_CONFIG } from "../questions";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useGetAvailableQuizzesQuery, useGetMyAttemptsQuery } from "../store/apiSlice";
+import { useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
+import RulesAcknowledgeTour from "./RulesAcknowledgeTour";
 
 const rules = [
   { icon: "🚫", title: "No AI Tools", desc: "Use of ChatGPT, Claude, or any AI assistant is strictly prohibited." },
@@ -11,19 +15,71 @@ const rules = [
 ];
 
 export default function HomeScreen({ onStart, user }) {
+  const dispatch = useDispatch();
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState([]);
   const [msg, setMsg] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const ruleRefs = useRef([]);
+  
+  const { data: quizzesData } = useGetAvailableQuizzesQuery(undefined, { skip: !user });
+  const { data: attemptsData, isLoading: loadingAttempts } = useGetMyAttemptsQuery(undefined, { skip: !user });
+  
+  const quizzes = quizzesData?.quizzes || [];
+  const attempts = attemptsData?.attempts || [];
+  const attemptedQuizIds = attempts.map(a => typeof a.quizId === 'object' ? a.quizId?._id : a.quizId);
+
+  const handleSelectQuiz = (e) => {
+    const val = e.target.value;
+    localStorage.setItem("selectedQuizId", val);
+    
+    // If loading attempts, let's not trigger the tour aggressively just yet
+    if (loadingAttempts) return;
+
+    // Check if already attempted
+    if (attemptedQuizIds.includes(val)) {
+      setMsg("❌ You have already attempted this quiz. Please select another.");
+      setShowTour(false);
+      setAcknowledged(false);
+      return;
+    }
+    
+    setMsg("");
+    if (!acknowledged && val) {
+      setShowTour(true);
+    }
+  };
 
   const handleStart = () => {
-    const attempted = localStorage.getItem("quiz_attempted");
+    if (user) {
+      const selected = localStorage.getItem("selectedQuizId");
+      if (!selected) {
+        setMsg("❌ Please select a quiz from the dropdown first.");
+        return;
+      }
+      
+      if (attemptedQuizIds.includes(selected)) {
+        setMsg("❌ You are not eligible. You have already attempted this quiz.");
+        return;
+      }
 
-    if (attempted === "true") {
-      setMsg("❌ You are not eligible. You have already attempted the quiz.");
-      return;
+      if (!acknowledged) {
+        setMsg("");
+        setShowTour(true);
+        return;
+      }
     }
 
     onStart();
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem("selectedQuizId");
+    localStorage.removeItem("quiz_attempted");
+    setAcknowledged(false);
+    setMsg("");
   };
 
   useEffect(() => {
@@ -39,7 +95,17 @@ export default function HomeScreen({ onStart, user }) {
   }, []);
 
   return (
-    <div style={{
+    <>
+      {showTour && (
+        <RulesAcknowledgeTour
+          ruleElements={ruleRefs.current}
+          onComplete={() => {
+            setShowTour(false);
+            setAcknowledged(true);
+          }}
+        />
+      )}
+      <div style={{
       minHeight: "100vh", width: "100%",
       fontFamily: "'Poppins', sans-serif",
       background: "#ffffff",
@@ -213,6 +279,16 @@ export default function HomeScreen({ onStart, user }) {
               <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>
                 {user.name}
               </span>
+              <button 
+                onClick={handleLogout}
+                style={{
+                  background: "transparent", border: "1px solid #ef4444", 
+                  color: "#ef4444", padding: "4px 10px", borderRadius: 6, 
+                  fontSize: 11, fontWeight: 600, cursor: "pointer", marginLeft: 8
+                }}
+              >
+                Logout
+              </button>
             </div>
           )}
           <div style={{
@@ -304,22 +380,56 @@ export default function HomeScreen({ onStart, user }) {
             ))}
           </div>
 
-          {/* CTA Button */}
-          <button className="cta-btn" onClick={handleStart} style={{
-            width: "100%", padding: "17px 0",
-            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-            color: "#fff", border: "none", borderRadius: 12,
-            fontSize: 16, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
-            cursor: "pointer", letterSpacing: "0.02em",
-            boxShadow: "0 8px 28px rgba(16,185,129,0.28)",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          }}>
-            <span style={{ fontSize: 18 }}>🚀</span>
-            Begin Quiz Now
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M4 9h10M10 5l4 4-4 4" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+          {user ? (
+            <div style={{ background: "#f8fafc", padding: 20, borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Select Quiz to Attempt</label>
+              <select 
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 8, border: "1.5px solid #cbd5e1", fontSize: 14, outline: "none", marginBottom: 16, fontFamily: "'Poppins', sans-serif" }}
+                onChange={handleSelectQuiz}
+                defaultValue={localStorage.getItem("selectedQuizId") || ""}
+              >
+                <option value="" disabled>-- Choose a quiz --</option>
+                {quizzes.map(q => {
+                  const isAttempted = attemptedQuizIds.includes(q._id);
+                  return (
+                    <option key={q._id} value={q._id}>
+                      {q.title} {isAttempted ? "(Already Attempted)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <button className="cta-btn" onClick={handleStart} disabled={!acknowledged} style={{
+                width: "100%", padding: "14px 0",
+                background: acknowledged ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "#cbd5e1",
+                color: acknowledged ? "#fff" : "#94a3b8", border: "none", borderRadius: 8,
+                fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                cursor: acknowledged ? "pointer" : "not-allowed", letterSpacing: "0.02em",
+                boxShadow: acknowledged ? "0 8px 28px rgba(16,185,129,0.28)" : "none",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                transition: "all 0.3s ease"
+              }}>
+                <span style={{ fontSize: 16, filter: acknowledged ? "none" : "grayscale(100%) opacity(0.5)" }}>🚀</span>
+                Begin Quiz Now
+              </button>
+            </div>
+          ) : (
+            <button className="cta-btn" onClick={onStart} style={{
+              width: "100%", padding: "17px 0",
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+              color: "#fff", border: "none", borderRadius: 12,
+              fontSize: 16, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+              cursor: "pointer", letterSpacing: "0.02em",
+              boxShadow: "0 8px 28px rgba(16,185,129,0.28)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            }}>
+              <span style={{ fontSize: 18 }}>🔐</span>
+              Login to Begin
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M4 9h10M10 5l4 4-4 4" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
 
           {msg && (
             <div style={{
@@ -331,7 +441,6 @@ export default function HomeScreen({ onStart, user }) {
               borderRadius: 4,
               paddingBlock: 5,
               paddingInline: 8,
-              // display: "inline-block",
             }}>
               {msg}
             </div>
@@ -365,13 +474,13 @@ export default function HomeScreen({ onStart, user }) {
             {rules.map((rule, i) => (
               <div
                 key={i}
+                ref={(el) => (ruleRefs.current[i] = el)}
                 className={`rule-card${shown.includes(i) ? " vis" : ""}`}
                 style={{
                   background: "#f8fafc",
                   border: "1px solid #e2e8f0",
                   borderRadius: 12, padding: "13px 16px",
                   display: "flex", gap: 13, alignItems: "center",
-                  // transitionDelay: `${0.1 + i * 0.08}s`,
                   cursor: "default",
                 }}
               >
@@ -431,6 +540,7 @@ export default function HomeScreen({ onStart, user }) {
       }}>
         © 2025 QUIZPRO · ALL RIGHTS RESERVED
       </footer>
-    </div>
+      </div>
+    </>
   );
 }

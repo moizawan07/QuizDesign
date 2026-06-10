@@ -7,55 +7,39 @@ const QuizResultSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "User ID is required"],
     },
-    correct: {
-      type: Number,
-      required: [true, "Correct answer count is required"],
-      default: 0,
+    quizId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      required: [true, "Quiz ID is required"],
     },
-    wrong: {
-      type: Number,
-      required: [true, "Wrong answer count is required"],
-      default: 0,
-    },
-    unattempted: {
-      type: Number,
-      required: [true, "Unattempted count is required"],
-      default: 0,
-    },
-    total: {
-      type: Number,
-      required: [true, "Total questions is required"],
-      default: 0,
-    },
-    percentage: {
-      type: Number,
-      required: [true, "Percentage is required"],
-      default: 0,
-    },
-    completedAt: {
-      type: Date,
-      required: [true, "Completion time is required"],
-      default: Date.now,
-    },
-    timeTaken: {
-      type: Number,
-      description: "Time taken to complete quiz in seconds",
-      default: 0,
-    },
-    note: {
-      type: String,
-      description: "Any notes about the submission",
-    },
+    correct: { type: Number, default: 0 },
+    wrong: { type: Number, default: 0 },
+    unattempted: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
+    percentage: { type: Number, default: 0 },
+    completedAt: { type: Date, default: Date.now },
+    timeTaken: { type: Number, default: 0 },
+    tabViolations: { type: Number, default: 0 },
+    note: { type: String, default: "Manual submit" },
+    detailedAnswers: [
+      {
+        questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+        questionText: String,
+        selectedOption: String,
+        userCode: String,
+        correctAnswer: String,
+        isCorrect: Boolean,
+      }
+    ]
   },
   { timestamps: true }
 );
 
-// Populate user details when fetching results
 QuizResultSchema.pre(/^find/, function (next) {
   if (this.options._recursed) {
     return next();
   }
-  this.populate("userId");
+  this.populate("userId").populate("quizId");
   next();
 });
 

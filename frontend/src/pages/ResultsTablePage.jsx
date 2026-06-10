@@ -1,29 +1,11 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { quizAPI } from "../utils/api";
+import { useGetResultsQuery } from "../store/apiSlice";
 
 export default function ResultsTablePage() {
   const navigate = useNavigate();
-  const [results, setResults] = useState([]);
-  const [tableLoading, setTableLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetchResults();
-  }, []);
-
-  const fetchResults = async () => {
-    try {
-      setTableLoading(true);
-      const res = await quizAPI.getResultsTable();
-      setResults(res.data.results || []);
-    } catch (err) {
-      setError("Failed to load results");
-    } finally {
-      setTableLoading(false);
-    }
-  };
+  const { data, isLoading: tableLoading, error: apiError } = useGetResultsQuery();
+  const results = data?.results || [];
+  const error = apiError ? "Failed to load results" : "";
 
   return (
     <div

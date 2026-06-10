@@ -1,9 +1,12 @@
 import express from "express";
-import { submitQuiz, getAllResults } from "../controllers/quizController.js";
+import { submitQuiz, getAllResults, getAvailableQuizzes, getQuizQuestions, getMyAttempts } from "../controllers/quizController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
+router.get("/available", getAvailableQuizzes);
+router.get("/my-attempts", protect, getMyAttempts);
+router.get("/:quizId/questions", getQuizQuestions);
 router.post("/submit", protect, submitQuiz);
 router.get("/results", getAllResults);
 

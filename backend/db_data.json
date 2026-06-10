@@ -1,0 +1,562 @@
+{
+  "users": [
+    {
+      "_id": "6a27d924a29e969e1e6933ed",
+      "role": "6a27d924a29e969e1e6933e9",
+      "name": "Super Admin",
+      "email": "admin@quizpro.com",
+      "quizAttempt": false,
+      "createdAt": "2026-06-09T09:13:08.277Z",
+      "updatedAt": "2026-06-09T09:13:08.277Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27e1cb9c68edbc7f1b3d0f",
+      "role": "6a27d924a29e969e1e6933eb",
+      "name": "Humza",
+      "email": "humza.rehman.779@gmail.com",
+      "idNo": "00013780",
+      "quizAttempt": true,
+      "createdAt": "2026-06-09T09:50:03.979Z",
+      "updatedAt": "2026-06-09T10:07:37.780Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27e74a6fcc319a072da060",
+      "role": "6a27d924a29e969e1e6933eb",
+      "name": "Moiz",
+      "email": "moiz@gmail.com",
+      "idNo": "00013781",
+      "quizAttempt": true,
+      "createdAt": "2026-06-09T10:13:30.134Z",
+      "updatedAt": "2026-06-09T10:13:59.081Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27ecc56fcc319a072da0c3",
+      "role": "6a27d924a29e969e1e6933eb",
+      "name": "Muneeb",
+      "email": "muneeb@gmail.com",
+      "idNo": "12345",
+      "quizAttempt": true,
+      "createdAt": "2026-06-09T10:36:53.265Z",
+      "updatedAt": "2026-06-09T10:37:12.389Z",
+      "__v": 0
+    }
+  ],
+  "quizzes": [
+    {
+      "status": "Open",
+      "_id": "6a27d924a29e969e1e6933ef",
+      "title": "React JS Final Evaluation - Batch 5",
+      "stack": "General",
+      "numberOfQuestions": 0,
+      "timeLimit": 10,
+      "createdAt": "2026-06-09T09:13:08.531Z",
+      "updatedAt": "2026-06-09T09:13:08.531Z",
+      "__v": 0
+    },
+    {
+      "status": "Open",
+      "_id": "6a27d924a29e969e1e6933f1",
+      "title": "UI/UX Design Basics",
+      "stack": "General",
+      "numberOfQuestions": 0,
+      "timeLimit": 5,
+      "createdAt": "2026-06-09T09:13:08.659Z",
+      "updatedAt": "2026-06-09T09:13:08.659Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27fb4063c3f8719d3219ba",
+      "head": "Bootcamp 4.0",
+      "category": "Software Engineering",
+      "title": "MERN STACK QUIZ",
+      "stack": "General",
+      "numberOfQuestions": 0,
+      "timeLimit": 10,
+      "status": "Open",
+      "createdAt": "2026-06-09T11:38:40.148Z",
+      "updatedAt": "2026-06-09T11:38:40.148Z",
+      "__v": 0
+    }
+  ],
+  "questions": [
+    {
+      "isLogical": false,
+      "_id": "6a27d924a29e969e1e6933f3",
+      "quizId": "6a27d924a29e969e1e6933ef",
+      "questionText": "Which hook is used to manage state in a functional component?",
+      "options": [
+        "useEffect",
+        "useState",
+        "useContext",
+        "useReducer"
+      ],
+      "correctAnswer": "useState",
+      "difficulty": "Easy",
+      "__v": 0,
+      "createdAt": "2026-06-09T09:13:08.789Z",
+      "updatedAt": "2026-06-09T09:13:08.789Z",
+      "testCases": []
+    },
+    {
+      "isLogical": false,
+      "_id": "6a27d924a29e969e1e6933f4",
+      "quizId": "6a27d924a29e969e1e6933ef",
+      "questionText": "What will happen if you provide an empty array [] as the second argument to useEffect?",
+      "options": [
+        "It runs after every render",
+        "It runs only once on mount",
+        "It never runs",
+        "It causes an infinite loop"
+      ],
+      "correctAnswer": "It runs only once on mount",
+      "difficulty": "Medium",
+      "__v": 0,
+      "createdAt": "2026-06-09T09:13:08.790Z",
+      "updatedAt": "2026-06-09T09:13:08.790Z",
+      "testCases": []
+    },
+    {
+      "isLogical": false,
+      "_id": "6a27d924a29e969e1e6933f5",
+      "quizId": "6a27d924a29e969e1e6933ef",
+      "questionText": "Why is it discouraged to use index as a key in React lists?",
+      "options": [
+        "It causes performance issues",
+        "It breaks the DOM order on reorders",
+        "React will throw a compilation error",
+        "Both A and B"
+      ],
+      "correctAnswer": "Both A and B",
+      "difficulty": "Logical",
+      "__v": 0,
+      "createdAt": "2026-06-09T09:13:08.790Z",
+      "updatedAt": "2026-06-09T09:13:08.790Z",
+      "testCases": []
+    },
+    {
+      "isLogical": false,
+      "_id": "6a27d924a29e969e1e6933f7",
+      "quizId": "6a27d924a29e969e1e6933f1",
+      "questionText": "Which principle focuses on visual balance in a design?",
+      "options": [
+        "Symmetry",
+        "Hierarchy",
+        "Contrast",
+        "Alignment"
+      ],
+      "correctAnswer": "Symmetry",
+      "difficulty": "Easy",
+      "__v": 0,
+      "createdAt": "2026-06-09T09:13:08.921Z",
+      "updatedAt": "2026-06-09T09:13:08.921Z",
+      "testCases": []
+    },
+    {
+      "isLogical": false,
+      "_id": "6a27d924a29e969e1e6933f8",
+      "quizId": "6a27d924a29e969e1e6933f1",
+      "questionText": "What does 'CTA' stand for in web design?",
+      "options": [
+        "Color Text Alignment",
+        "Call To Action",
+        "Center Top Area",
+        "Control Target Audience"
+      ],
+      "correctAnswer": "Call To Action",
+      "difficulty": "Medium",
+      "__v": 0,
+      "createdAt": "2026-06-09T09:13:08.921Z",
+      "updatedAt": "2026-06-09T09:13:08.921Z",
+      "testCases": []
+    },
+    {
+      "isLogical": false,
+      "_id": "6a27dde06ff320bbece4d302",
+      "quizId": "6a27d924a29e969e1e6933f1",
+      "questionText": "What is youor na,e",
+      "options": [
+        "MOiz",
+        "Ahmed",
+        "Huzaifa",
+        "Abdulllah "
+      ],
+      "correctAnswer": "Huzaifa",
+      "difficulty": "Hard",
+      "createdAt": "2026-06-09T09:33:20.697Z",
+      "updatedAt": "2026-06-09T09:33:20.697Z",
+      "__v": 0,
+      "testCases": []
+    },
+    {
+      "_id": "6a28037a0756f53ff6315de9",
+      "quizId": "6a27fb4063c3f8719d3219ba",
+      "questionText": "Print a table of 2 through loop",
+      "options": [],
+      "correctAnswer": "",
+      "isLogical": true,
+      "difficulty": "Medium",
+      "questionCategory": "LOOP",
+      "createdAt": "2026-06-09T12:13:46.164Z",
+      "updatedAt": "2026-06-09T12:13:46.164Z",
+      "__v": 0,
+      "testCases": []
+    }
+  ],
+  "results": [
+    {
+      "tabViolations": 0,
+      "note": "Manual submit",
+      "_id": "6a27e5e9664bd4b6a4447dbe",
+      "userId": {
+        "_id": "6a27e1cb9c68edbc7f1b3d0f",
+        "role": "6a27d924a29e969e1e6933eb",
+        "name": "Humza",
+        "email": "humza.rehman.779@gmail.com",
+        "idNo": "00013780",
+        "quizAttempt": true,
+        "createdAt": "2026-06-09T09:50:03.979Z",
+        "updatedAt": "2026-06-09T10:07:37.780Z",
+        "__v": 0
+      },
+      "quizId": {
+        "status": "Open",
+        "_id": "6a27d924a29e969e1e6933ef",
+        "title": "React JS Final Evaluation - Batch 5",
+        "stack": "General",
+        "numberOfQuestions": 0,
+        "timeLimit": 10,
+        "createdAt": "2026-06-09T09:13:08.531Z",
+        "updatedAt": "2026-06-09T09:13:08.531Z",
+        "__v": 0
+      },
+      "correct": 0,
+      "wrong": 0,
+      "unattempted": 3,
+      "total": 3,
+      "percentage": 0,
+      "completedAt": "2026-06-09T10:07:37.243Z",
+      "timeTaken": 9,
+      "detailedAnswers": [
+        {
+          "questionId": "6a27d924a29e969e1e6933f4",
+          "questionText": "What will happen if you provide an empty array [] as the second argument to useEffect?",
+          "selectedOption": "",
+          "correctAnswer": "It runs only once on mount",
+          "isCorrect": false,
+          "_id": "6a27e5e9664bd4b6a4447dbf"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f3",
+          "questionText": "Which hook is used to manage state in a functional component?",
+          "selectedOption": "",
+          "correctAnswer": "useState",
+          "isCorrect": false,
+          "_id": "6a27e5e9664bd4b6a4447dc0"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f5",
+          "questionText": "Why is it discouraged to use index as a key in React lists?",
+          "selectedOption": "",
+          "correctAnswer": "Both A and B",
+          "isCorrect": false,
+          "_id": "6a27e5e9664bd4b6a4447dc1"
+        }
+      ],
+      "createdAt": "2026-06-09T10:07:37.645Z",
+      "updatedAt": "2026-06-09T10:07:37.645Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27e7666fcc319a072da06b",
+      "userId": {
+        "_id": "6a27e74a6fcc319a072da060",
+        "role": "6a27d924a29e969e1e6933eb",
+        "name": "Moiz",
+        "email": "moiz@gmail.com",
+        "idNo": "00013781",
+        "quizAttempt": true,
+        "createdAt": "2026-06-09T10:13:30.134Z",
+        "updatedAt": "2026-06-09T10:13:59.081Z",
+        "__v": 0
+      },
+      "quizId": {
+        "status": "Open",
+        "_id": "6a27d924a29e969e1e6933ef",
+        "title": "React JS Final Evaluation - Batch 5",
+        "stack": "General",
+        "numberOfQuestions": 0,
+        "timeLimit": 10,
+        "createdAt": "2026-06-09T09:13:08.531Z",
+        "updatedAt": "2026-06-09T09:13:08.531Z",
+        "__v": 0
+      },
+      "correct": 1,
+      "wrong": 0,
+      "unattempted": 2,
+      "total": 3,
+      "percentage": 33,
+      "completedAt": "2026-06-09T10:13:58.564Z",
+      "timeTaken": 17,
+      "tabViolations": 1,
+      "note": "Auto-submitted: Tab violation (1 times)",
+      "detailedAnswers": [
+        {
+          "questionId": "6a27d924a29e969e1e6933f4",
+          "questionText": "What will happen if you provide an empty array [] as the second argument to useEffect?",
+          "selectedOption": "It runs only once on mount",
+          "correctAnswer": "It runs only once on mount",
+          "isCorrect": true,
+          "_id": "6a27e7666fcc319a072da06c"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f3",
+          "questionText": "Which hook is used to manage state in a functional component?",
+          "selectedOption": "",
+          "correctAnswer": "useState",
+          "isCorrect": false,
+          "_id": "6a27e7666fcc319a072da06d"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f5",
+          "questionText": "Why is it discouraged to use index as a key in React lists?",
+          "selectedOption": "",
+          "correctAnswer": "Both A and B",
+          "isCorrect": false,
+          "_id": "6a27e7666fcc319a072da06e"
+        }
+      ],
+      "createdAt": "2026-06-09T10:13:58.952Z",
+      "updatedAt": "2026-06-09T10:13:58.952Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27ecd86fcc319a072da0ce",
+      "userId": {
+        "_id": "6a27ecc56fcc319a072da0c3",
+        "role": "6a27d924a29e969e1e6933eb",
+        "name": "Muneeb",
+        "email": "muneeb@gmail.com",
+        "idNo": "12345",
+        "quizAttempt": true,
+        "createdAt": "2026-06-09T10:36:53.265Z",
+        "updatedAt": "2026-06-09T10:37:12.389Z",
+        "__v": 0
+      },
+      "quizId": {
+        "status": "Open",
+        "_id": "6a27d924a29e969e1e6933f1",
+        "title": "UI/UX Design Basics",
+        "stack": "General",
+        "numberOfQuestions": 0,
+        "timeLimit": 5,
+        "createdAt": "2026-06-09T09:13:08.659Z",
+        "updatedAt": "2026-06-09T09:13:08.659Z",
+        "__v": 0
+      },
+      "correct": 1,
+      "wrong": 1,
+      "unattempted": 1,
+      "total": 3,
+      "percentage": 33,
+      "completedAt": "2026-06-09T10:37:11.523Z",
+      "timeTaken": 9,
+      "tabViolations": 1,
+      "note": "Tab Violation",
+      "detailedAnswers": [
+        {
+          "questionId": "6a27dde06ff320bbece4d302",
+          "questionText": "What is youor na,e",
+          "selectedOption": "MOiz",
+          "correctAnswer": "Huzaifa",
+          "isCorrect": false,
+          "_id": "6a27ecd86fcc319a072da0cf"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f8",
+          "questionText": "What does 'CTA' stand for in web design?",
+          "selectedOption": "Call To Action",
+          "correctAnswer": "Call To Action",
+          "isCorrect": true,
+          "_id": "6a27ecd86fcc319a072da0d0"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f7",
+          "questionText": "Which principle focuses on visual balance in a design?",
+          "selectedOption": "",
+          "correctAnswer": "Symmetry",
+          "isCorrect": false,
+          "_id": "6a27ecd86fcc319a072da0d1"
+        }
+      ],
+      "createdAt": "2026-06-09T10:37:12.259Z",
+      "updatedAt": "2026-06-09T10:37:12.259Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a27fa6863c3f8719d32196a",
+      "userId": {
+        "_id": "6a27e1cb9c68edbc7f1b3d0f",
+        "role": "6a27d924a29e969e1e6933eb",
+        "name": "Humza",
+        "email": "humza.rehman.779@gmail.com",
+        "idNo": "00013780",
+        "quizAttempt": true,
+        "createdAt": "2026-06-09T09:50:03.979Z",
+        "updatedAt": "2026-06-09T10:07:37.780Z",
+        "__v": 0
+      },
+      "quizId": {
+        "status": "Open",
+        "_id": "6a27d924a29e969e1e6933f1",
+        "title": "UI/UX Design Basics",
+        "stack": "General",
+        "numberOfQuestions": 0,
+        "timeLimit": 5,
+        "createdAt": "2026-06-09T09:13:08.659Z",
+        "updatedAt": "2026-06-09T09:13:08.659Z",
+        "__v": 0
+      },
+      "correct": 0,
+      "wrong": 0,
+      "unattempted": 3,
+      "total": 3,
+      "percentage": 0,
+      "completedAt": "2026-06-09T11:35:03.741Z",
+      "timeTaken": 51,
+      "tabViolations": 1,
+      "note": "Tab Violation",
+      "detailedAnswers": [
+        {
+          "questionId": "6a27d924a29e969e1e6933f7",
+          "questionText": "Which principle focuses on visual balance in a design?",
+          "selectedOption": "",
+          "correctAnswer": "Symmetry",
+          "isCorrect": false,
+          "_id": "6a27fa6863c3f8719d32196b"
+        },
+        {
+          "questionId": "6a27dde06ff320bbece4d302",
+          "questionText": "What is youor na,e",
+          "selectedOption": "",
+          "correctAnswer": "Huzaifa",
+          "isCorrect": false,
+          "_id": "6a27fa6863c3f8719d32196c"
+        },
+        {
+          "questionId": "6a27d924a29e969e1e6933f8",
+          "questionText": "What does 'CTA' stand for in web design?",
+          "selectedOption": "",
+          "correctAnswer": "Call To Action",
+          "isCorrect": false,
+          "_id": "6a27fa6863c3f8719d32196d"
+        }
+      ],
+      "createdAt": "2026-06-09T11:35:04.303Z",
+      "updatedAt": "2026-06-09T11:35:04.303Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a28041b0756f53ff6315e1e",
+      "userId": {
+        "_id": "6a27e1cb9c68edbc7f1b3d0f",
+        "role": "6a27d924a29e969e1e6933eb",
+        "name": "Humza",
+        "email": "humza.rehman.779@gmail.com",
+        "idNo": "00013780",
+        "quizAttempt": true,
+        "createdAt": "2026-06-09T09:50:03.979Z",
+        "updatedAt": "2026-06-09T10:07:37.780Z",
+        "__v": 0
+      },
+      "quizId": {
+        "_id": "6a27fb4063c3f8719d3219ba",
+        "head": "Bootcamp 4.0",
+        "category": "Software Engineering",
+        "title": "MERN STACK QUIZ",
+        "stack": "General",
+        "numberOfQuestions": 0,
+        "timeLimit": 10,
+        "status": "Open",
+        "createdAt": "2026-06-09T11:38:40.148Z",
+        "updatedAt": "2026-06-09T11:38:40.148Z",
+        "__v": 0
+      },
+      "correct": 0,
+      "wrong": 0,
+      "unattempted": 1,
+      "total": 1,
+      "percentage": 0,
+      "completedAt": "2026-06-09T12:16:27.019Z",
+      "timeTaken": 104,
+      "tabViolations": 0,
+      "note": "Submitted",
+      "detailedAnswers": [
+        {
+          "questionId": "6a28037a0756f53ff6315de9",
+          "questionText": "Print a table of 2 through loop",
+          "selectedOption": "",
+          "userCode": "for(i=1 ; i < 11 ; i++){\ncosole.log(2 * i)\n}",
+          "correctAnswer": "",
+          "isCorrect": null,
+          "_id": "6a28041b0756f53ff6315e1f"
+        }
+      ],
+      "createdAt": "2026-06-09T12:16:27.536Z",
+      "updatedAt": "2026-06-09T12:16:27.536Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a2806bb0756f53ff6315e9c",
+      "userId": {
+        "_id": "6a27e74a6fcc319a072da060",
+        "role": "6a27d924a29e969e1e6933eb",
+        "name": "Moiz",
+        "email": "moiz@gmail.com",
+        "idNo": "00013781",
+        "quizAttempt": true,
+        "createdAt": "2026-06-09T10:13:30.134Z",
+        "updatedAt": "2026-06-09T10:13:59.081Z",
+        "__v": 0
+      },
+      "quizId": {
+        "_id": "6a27fb4063c3f8719d3219ba",
+        "head": "Bootcamp 4.0",
+        "category": "Software Engineering",
+        "title": "MERN STACK QUIZ",
+        "stack": "General",
+        "numberOfQuestions": 0,
+        "timeLimit": 10,
+        "status": "Open",
+        "createdAt": "2026-06-09T11:38:40.148Z",
+        "updatedAt": "2026-06-09T11:38:40.148Z",
+        "__v": 0
+      },
+      "correct": 0,
+      "wrong": 0,
+      "unattempted": 1,
+      "total": 1,
+      "percentage": 0,
+      "completedAt": "2026-06-09T12:27:39.343Z",
+      "timeTaken": 3,
+      "tabViolations": 1,
+      "note": "Tab Violation",
+      "detailedAnswers": [
+        {
+          "questionId": "6a28037a0756f53ff6315de9",
+          "questionText": "Print a table of 2 through loop",
+          "selectedOption": "",
+          "userCode": "",
+          "correctAnswer": "",
+          "isCorrect": null,
+          "_id": "6a2806bb0756f53ff6315e9d"
+        }
+      ],
+      "createdAt": "2026-06-09T12:27:39.847Z",
+      "updatedAt": "2026-06-09T12:27:39.847Z",
+      "__v": 0
+    }
+  ]
+}

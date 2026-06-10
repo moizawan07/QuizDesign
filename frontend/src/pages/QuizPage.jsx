@@ -1,21 +1,20 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useSelector } from "react-redux";
 import QuizScreen from "../components/QuizScreen";
 import { useEffect } from "react";
 
 export default function QuizPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading } = useSelector(state => state.auth);
   const token = localStorage.getItem("auth_token");
-  const quizCompleted = localStorage.getItem("quiz_attempted");
-  if (!token) {
-    navigate("/");
-  }
-  console.log(token);
   
-  if (token && quizCompleted === "true") {
-    navigate("/");
-  }
+  // Removed legacy quizCompleted check so users can attempt multiple distinct quizzes
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/");
+    }
+  }, [token, navigate]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -24,7 +23,7 @@ export default function QuizPage() {
   }, [user, loading, navigate]);
 
   const handleSubmitComplete = (result) => {
-    navigate("/result");
+    navigate("/");
   };
 
   if (loading || !user) {
