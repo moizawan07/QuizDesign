@@ -90,25 +90,38 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     let correct = 0;
     let wrong = 0;
     let unattempted = 0;
+    let logicalTotal = 0;
+    let logicalAttempted = 0;
 
     const detailedAnswers = questions.map(q => {
       const userAns = finalAnswers[q.id] || "";
-      let isCorrect = userAns ? (userAns === q.answer) : null;
+      let isCorrect = null;
 
-      if (isCorrect === true) correct++;
-      else if (isCorrect === false) wrong++;
-      else unattempted++;
+      if (q.type === "logical") {
+        logicalTotal++;
+        if (userAns.trim() && userAns !== q.starterCode) {
+           logicalAttempted++;
+        }
+      } else {
+        isCorrect = userAns ? (userAns === q.answer) : null;
+        if (isCorrect === true) correct++;
+        else if (isCorrect === false) wrong++;
+        else unattempted++;
+      }
 
       return {
         questionId: q.id,
         questionText: q.question,
-        selectedOption: userAns,
+        type: q.type || "theoretical",
+        selectedOption: q.type === "logical" ? null : userAns,
+        submittedCode: q.type === "logical" ? userAns : null,
         correctAnswer: q.answer,
         isCorrect
       };
     });
 
-    const percentage = Math.round((correct / questions.length) * 100);
+    const theoreticalTotal = questions.length - logicalTotal;
+    const percentage = theoreticalTotal > 0 ? Math.round((correct / theoreticalTotal) * 100) : 0;
     const totalSecondsAllowed = quizDetails?.timeLimit * 60 || 0;
 
     const payload = {
@@ -121,6 +134,8 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       completedAt: new Date().toISOString(),
       timeTaken: totalSecondsAllowed - timeLeft,
       detailedAnswers,
+      logicalTotal,
+      logicalAttempted,
       tabViolations: tabWarnings,
       note: forcedByViolation
         ? "Tab Violation"
@@ -134,7 +149,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       if (onSubmitComplete) {
         onSubmitComplete(payload);
       } else {
-        window.location.replace("/results");
+        window.location.replace("/");
       }
     } catch (e) {
       console.error(e);
@@ -366,30 +381,77 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
               <div style={{ padding: "32px 36px" }}>
 
-                {q.options && q.options.length > 0 && (
-                  <div style={{ marginBottom: 24 }}>
-                    {q.options.map((opt, i) => {
-                      const selected = answers[q.id] === opt;
-                      const letter = ["A", "B", "C", "D", "E", "F"][i];
-                      return (
-                        <button key={i} className="option-btn" onClick={() => {
-                          setAnswers(p => ({ ...p, [q.id]: opt }));
-                          setTimeout(() => {
-                            if (current < questions.length - 1) {
-                              setCurrent(c => c + 1);
-                            } else {
-                              handleSubmit();
-                            }
-                          }, 500);
+                {q.type === "logical" ? (
+                  <div style={{ marginBottom: 24, animation: "fadeUp 0.4s ease" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Code Editor (IDE)</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: "#94a3b8" }}>Manual Grading</span>
+                    </div>
+                    <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid #334155", background: "#0f172a", boxShadow: "inset 0 2px 10px rgba(0,0,0,0.5)" }}>
+                      <div style={{ height: 32, background: "#1e293b", borderBottom: "1px solid #334155", display: "flex", alignItems: "center", padding: "0 16px", gap: 6 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444" }}/>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f59e0b" }}/>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#10b981" }}/>
+                        <span style={{ marginLeft: 10, fontSize: 11, color: "#64748b", fontFamily: "monospace" }}>solution.js</span>
+                      </div>
+                      <textarea
+                        value={answers[q.id] !== undefined ? answers[q.id] : (q.starterCode || "")}
+                        onChange={(e) => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
+                        spellCheck="false"
+                        style={{
+                          width: "100%",
+                          minHeight: 320,
+                          background: "transparent",
+                          color: "#f8fafc",
+                          border: "none",
+                          padding: 20,
+                          fontFamily: "Consolas, 'Courier New', monospace",
+                          fontSize: 14,
+                          lineHeight: 1.6,
+                          outline: "none",
+                          resize: "vertical"
                         }}
-                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "16px 18px", marginBottom: 12, borderRadius: 12, border: `2px solid ${selected ? "#10b981" : "#e2e8f0"}`, background: selected ? "rgba(16,185,129,0.08)" : "#f8fafc", cursor: "pointer", textAlign: "left" }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 10, background: selected ? "linear-gradient(135deg, #10b981, #059669)" : "#e2e8f0", color: selected ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0, transition: "all 0.2s" }}>{letter}</div>
-                          <span style={{ fontSize: 15, color: "#0f172a", fontWeight: selected ? 600 : 400, flex: 1 }}>{opt}</span>
-                          {selected && <span style={{ fontSize: 18, color: "#10b981", flexShrink: 0 }}>✓</span>}
-                        </button>
-                      );
-                    })}
+                        placeholder="// Write your logic here..."
+                      />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+                      <button className="nav-btn" onClick={() => {
+                        if (current < questions.length - 1) {
+                          setCurrent(c => c + 1);
+                        } else {
+                          handleSubmit();
+                        }
+                      }} style={{ background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff", padding: "12px 28px", borderRadius: 8, fontWeight: 600, border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(16,185,129,0.3)" }}>
+                        Save Code & Continue
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  q.options && q.options.length > 0 && (
+                    <div style={{ marginBottom: 24 }}>
+                      {q.options.map((opt, i) => {
+                        const selected = answers[q.id] === opt;
+                        const letter = ["A", "B", "C", "D", "E", "F"][i];
+                        return (
+                          <button key={i} className="option-btn" onClick={() => {
+                            setAnswers(p => ({ ...p, [q.id]: opt }));
+                            setTimeout(() => {
+                              if (current < questions.length - 1) {
+                                setCurrent(c => c + 1);
+                              } else {
+                                handleSubmit();
+                              }
+                            }, 500);
+                          }}
+                            style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "16px 18px", marginBottom: 12, borderRadius: 12, border: `2px solid ${selected ? "#10b981" : "#e2e8f0"}`, background: selected ? "rgba(16,185,129,0.08)" : "#f8fafc", cursor: "pointer", textAlign: "left" }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: selected ? "linear-gradient(135deg, #10b981, #059669)" : "#e2e8f0", color: selected ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0, transition: "all 0.2s" }}>{letter}</div>
+                            <span style={{ fontSize: 15, color: "#0f172a", fontWeight: selected ? 600 : 400, flex: 1 }}>{opt}</span>
+                            {selected && <span style={{ fontSize: 18, color: "#10b981", flexShrink: 0 }}>✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )
                 )}
               </div>
             </div>
