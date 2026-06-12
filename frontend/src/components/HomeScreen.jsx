@@ -10,7 +10,7 @@ const rules = [
   { icon: "🚫", title: "No AI Tools", desc: "Use of ChatGPT, Claude, or any AI assistant is strictly prohibited." },
   { icon: "📋", title: "No Copy-Paste", desc: "Copying or pasting text from any external source is disabled." },
   { icon: "🔒", title: "Stay on Tab", desc: "Switching browser tabs will be detected and recorded as a violation." },
-  { icon: "⏱️", title: `${QUIZ_CONFIG.TIMER_MINUTES}-Minute Limit`, desc: "The quiz auto-submits when the timer runs out." },
+  { icon: "⏱️", title: `Minute Limit`, desc: "The quiz auto-submits when the timer runs out." },
   { icon: "✅", title: "1 Mark Per Question", desc: "Each correct answer carries 1 mark. No negative marking." },
   { icon: "📵", title: "No External Help", desc: "No textbooks, notes, or peer assistance allowed during the quiz." },
 ];
