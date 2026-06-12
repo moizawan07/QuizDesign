@@ -479,7 +479,6 @@ export default function HomeScreen({ onStart, user }) {
                 By starting, you agree to abide by all the rules listed.
               </p>
             </div>
-          </div>
  
           {/* RIGHT */}
           <div style={{ paddingLeft: 56, animation: mounted ? "fadeLeft 0.65s ease 0.2s both" : "none", alignSelf: "center" }}>
