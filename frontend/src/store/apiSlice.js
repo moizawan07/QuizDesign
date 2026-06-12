@@ -15,7 +15,7 @@ export const quizApiSlice = createApi({
   tagTypes: ['Quizzes', 'Results', 'Questions', 'Reattempts'],
   endpoints: (builder) => ({
     getAvailableQuizzes: builder.query({
-      query: () => '/quiz/available',
+      query: ({ page = 1, limit = 100, search = '' } = {}) => `/quiz/available?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
       providesTags: ['Quizzes']
     }),
     getQuizQuestions: builder.query({
@@ -35,19 +35,19 @@ export const quizApiSlice = createApi({
       providesTags: ['Results']
     }),
     getAdminQuizzes: builder.query({
-      query: () => '/admin/quizzes',
+      query: ({ page = 1, limit = 10, search = '' } = {}) => `/admin/quizzes?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
       providesTags: ['Quizzes']
     }),
     getAdminResults: builder.query({
-      query: () => '/admin/results',
+      query: ({ page = 1, limit = 10 } = {}) => `/admin/results?page=${page}&limit=${limit}`,
       providesTags: ['Results']
     }),
     getMyAttempts: builder.query({
-      query: () => '/quiz/my-attempts',
+      query: ({ page = 1, limit = 10 } = {}) => `/quiz/my-attempts?page=${page}&limit=${limit}`,
       providesTags: ['Results']
     }),
     getMyReattempts: builder.query({
-      query: () => '/quiz/my-reattempts',
+      query: ({ page = 1, limit = 10 } = {}) => `/quiz/my-reattempts?page=${page}&limit=${limit}`,
       providesTags: ['Reattempts']
     }),
     requestReattempt: builder.mutation({
@@ -59,7 +59,7 @@ export const quizApiSlice = createApi({
       invalidatesTags: ['Reattempts']
     }),
     getAdminReattempts: builder.query({
-      query: () => '/admin/reattempts',
+      query: ({ page = 1, limit = 10 } = {}) => `/admin/reattempts?page=${page}&limit=${limit}`,
       providesTags: ['Reattempts']
     }),
     updateReattemptStatus: builder.mutation({

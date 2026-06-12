@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import QuizPage from "./pages/QuizPage";
 import AdminPage from "./pages/AdminPage";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -41,6 +42,14 @@ export default function App() {
             element={
               <ProtectedRoute requireGuest>
                 <LoginPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/register" 
+            element={
+              <ProtectedRoute requireGuest>
+                <RegisterPage />
               </ProtectedRoute>
             } 
           />

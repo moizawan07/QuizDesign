@@ -7,7 +7,13 @@ import Reattempt from "../models/Reattempt.js";
 // Get available quizzes for users to select
 export const getAvailableQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find().sort("-createdAt");
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+    const query = search ? { title: { $regex: search, $options: "i" } } : {};
+    const quizzes = await Quiz.find(query).sort("-createdAt");
     
     // Only return quizzes that have at least 1 question
     const validQuizzes = [];
@@ -18,7 +24,13 @@ export const getAvailableQuizzes = async (req, res) => {
       }
     }
     
-    res.status(200).json({ success: true, quizzes: validQuizzes });
+    const paginatedQuizzes = validQuizzes.slice(skip, skip + limit);
+    
+    res.status(200).json({ 
+      success: true, 
+      quizzes: paginatedQuizzes,
+      pagination: { total: validQuizzes.length, page, pages: Math.ceil(validQuizzes.length / limit) }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -39,11 +51,23 @@ export const getQuizQuestions = async (req, res) => {
 
 export const getMyAttempts = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const attempts = await QuizResult.find({ userId: req.user.id })
       .select("quizId completedAt percentage total correct wrong timeTaken")
-      .sort({ completedAt: -1 });
+      .sort({ completedAt: -1 })
+      .skip(skip)
+      .limit(limit);
+      
+    const total = await QuizResult.countDocuments({ userId: req.user.id });
 
-    res.status(200).json({ success: true, attempts });
+    res.status(200).json({ 
+      success: true, 
+      attempts,
+      pagination: { total, page, pages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -60,9 +84,15 @@ export const submitQuiz = async (req, res) => {
     }
 
     // Check if the user has already attempted THIS specific quiz
-    const existingAttempt = await QuizResult.findOne({ userId, quizId });
-    if (existingAttempt) {
-      return res.status(400).json({ message: "You have already attempted this specific quiz." });
+    const existingAttempts = await QuizResult.find({ userId, quizId });
+    if (existingAttempts.length >= 1) {
+      const approvedReattempt = await Reattempt.findOne({ userId, quizId, status: "Approved" });
+      if (!approvedReattempt) {
+        return res.status(400).json({ message: "You have already attempted this specific quiz." });
+      }
+      if (existingAttempts.length >= 2) {
+        return res.status(400).json({ message: "You have already exhausted your approved reattempt." });
+      }
     }
 
     if (!quizId || correct === undefined || wrong === undefined || unattempted === undefined || total === undefined) {
@@ -128,9 +158,19 @@ export const requestReattempt = async (req, res) => {
 
 export const getMyReattempts = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const userId = req.user.id;
-    const requests = await Reattempt.find({ userId }).sort("-createdAt");
-    res.status(200).json({ success: true, data: requests });
+    const requests = await Reattempt.find({ userId }).sort("-createdAt").skip(skip).limit(limit);
+    const total = await Reattempt.countDocuments({ userId });
+
+    res.status(200).json({ 
+      success: true, 
+      data: requests,
+      pagination: { total, page, pages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

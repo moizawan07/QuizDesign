@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { quizApiSlice } from "../store/apiSlice";
 import QuizScreen from "../components/QuizScreen";
 import { useEffect } from "react";
 
 export default function QuizPage() {
   const navigate = useNavigate();
   const { user, loading } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
   const token = localStorage.getItem("auth_token");
   
   // Removed legacy quizCompleted check so users can attempt multiple distinct quizzes
@@ -27,6 +29,7 @@ export default function QuizPage() {
   }, [user, loading, navigate]);
 
   const handleSubmitComplete = (result) => {
+    dispatch(quizApiSlice.util.invalidateTags(['Results', 'Quizzes', 'Reattempts']));
     navigate("/");
   };
 
