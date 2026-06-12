@@ -1,26 +1,37 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { userAPI } from "../utils/api";
+import { useDispatch } from "react-redux";
+import { login } from "../store/slices/authSlice";
+import { useGetAvailableQuizzesQuery, useRegisterUserMutation } from "../store/apiSlice";
 
 export default function UserModal({ onComplete, onClose }) {
-  const { login } = useAuth();
+  const dispatch = useDispatch();
+  
+  const { data: quizzesData } = useGetAvailableQuizzesQuery();
+  const quizzes = quizzesData?.quizzes || [];
+  
+  const [registerUser, { isLoading }] = useRegisterUserMutation();
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     idNo: "",
-    professional: "Web Development",
+    quizId: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const [mounted, setMounted] = useState(false);
-  const [activeField, setActiveField] = useState(null); // ✅ Track active input
+  const [activeField, setActiveField] = useState(null);
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 100);
   }, []);
+  
+  useEffect(() => {
+    if (quizzes.length > 0 && !form.quizId) {
+      setForm(prev => ({ ...prev, quizId: quizzes[0]._id }));
+    }
+  }, [quizzes, form.quizId]);
 
   const validate = () => {
     const e = {};
@@ -29,6 +40,7 @@ export default function UserModal({ onComplete, onClose }) {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       e.email = "Invalid email";
     if (!form.idNo.trim()) e.idNo = "Required";
+    if (!form.quizId) e.quizId = "Please select a quiz";
     return e;
   };
 
@@ -36,23 +48,21 @@ export default function UserModal({ onComplete, onClose }) {
     const errs = validate();
     if (Object.keys(errs).length) return setErrors(errs);
 
-    setLoading(true);
     setApiError("");
 
     try {
-      const response = await userAPI.register({
+      localStorage.setItem("selectedQuizId", form.quizId);
+      
+      const response = await registerUser({
         name: form.name.trim(),
         email: form.email.trim(),
         idNo: form.idNo.trim(),
-        professional: form.professional,
-      });
+        professional: form.quizId,
+      }).unwrap();
 
-      // login(response.data.user, response.data.token);
-      onComplete(response.data.user, response.data.token);
+      onComplete(response.user, response.token);
     } catch (error) {
-      setApiError(error.response?.data?.message || "Failed");
-    } finally {
-      setLoading(false);
+      setApiError(error.data?.message || "Registration failed");
     }
   };
 
@@ -107,7 +117,7 @@ export default function UserModal({ onComplete, onClose }) {
 
   return (
     <div
-      onClick={() => onClose?.()}   // ✅ Click outside = close
+      onClick={() => onClose?.()}
       style={{
         position: "fixed",
         inset: 0,
@@ -133,9 +143,8 @@ export default function UserModal({ onComplete, onClose }) {
           position: "relative",
         }}
       >
-        {/* ✅ CLOSE BUTTON - NOW WORKING */}
         <button
-          onClick={() => onClose?.()}  // ✅ Fixed: ab kaam karega
+          onClick={() => onClose?.()}
           style={{
             position: "absolute",
             right: 10,
@@ -159,7 +168,6 @@ export default function UserModal({ onComplete, onClose }) {
           ✕
         </button>
 
-        {/* HEADER */}
         <div style={{ textAlign: "center", marginBottom: 14 }}>
           <div
             style={{
@@ -177,20 +185,12 @@ export default function UserModal({ onComplete, onClose }) {
           >
             👤
           </div>
-
           <h2 style={{ fontSize: 17, fontWeight: 700 }}>
             Student Registration
           </h2>
         </div>
 
-        {/* GRID */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {field("name", "Full Name", "Enter name")}
           {field("idNo", "ID No", "Enter ID", "number")}
         </div>
@@ -206,28 +206,34 @@ export default function UserModal({ onComplete, onClose }) {
               textTransform: "uppercase",
             }}
           >
-            Professional
+            Select Target Quiz
           </label>
 
           <select
-            value={form.professional}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, professional: e.target.value }))
-            }
+            value={form.quizId}
+            onChange={(e) => {
+              setForm((p) => ({ ...p, quizId: e.target.value }));
+              setErrors((p) => ({ ...p, quizId: "" }));
+            }}
             style={{
               width: "100%",
               padding: "10px 12px",
               borderRadius: 10,
-              border: "1.5px solid rgba(0,0,0,0.08)",
+              border: `1.5px solid ${errors.quizId ? "#ef4444" : "rgba(0,0,0,0.08)"}`,
               outline: "none",
               transition: "border-color 0.2s ease",
             }}
             onFocus={(e) => (e.currentTarget.style.borderColor = "#10b981")}
             onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)")}
           >
-            <option>Web Development</option>
-            <option>UI UX</option>
+            <option value="" disabled>Select a quiz to attempt</option>
+            {quizzes.map(q => (
+              <option key={q._id} value={q._id}>{q.title}</option>
+            ))}
           </select>
+          {errors.quizId && (
+            <p style={{ fontSize: 10, color: "#ef4444", marginTop: 2 }}>{errors.quizId}</p>
+          )}
         </div>
 
         {apiError && (
@@ -236,14 +242,14 @@ export default function UserModal({ onComplete, onClose }) {
 
         <button
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={isLoading}
           style={{
             width: "100%",
             padding: "12px",
             borderRadius: 12,
             border: "none",
             marginTop: 10,
-            background: loading
+            background: isLoading
               ? "#cbd5e1"
               : "linear-gradient(135deg,#10b981,#059669)",
             color: "#fff",
@@ -252,13 +258,13 @@ export default function UserModal({ onComplete, onClose }) {
             transition: "transform 0.1s ease",
           }}
           onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.transform = "translateY(-1px)";
+            if (!isLoading) e.currentTarget.style.transform = "translateY(-1px)";
           }}
           onMouseLeave={(e) => {
-            if (!loading) e.currentTarget.style.transform = "translateY(0)";
+            if (!isLoading) e.currentTarget.style.transform = "translateY(0)";
           }}
         >
-          {loading ? "Registering..." : "Continue →"}
+          {isLoading ? "Registering..." : "Continue →"}
         </button>
       </div>
     </div>

@@ -1,19 +1,51 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { Provider } from "react-redux";
+import { store } from "./store";
 import HomePage from "./pages/HomePage";
 import QuizPage from "./pages/QuizPage";
-import ResultsTablePage from "./pages/ResultsTablePage";
+import AdminPage from "./pages/AdminPage";
+import LoginPage from "./pages/LoginPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <Provider store={store}>
+      <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/quiz" element={<QuizPage />} />
-          <Route path="/results" element={<ResultsTablePage />} />
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute allowedRoles={["Guest", "User"]}>
+                <HomePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/quiz" 
+            element={
+              <ProtectedRoute allowedRoles={["User"]}>
+                <QuizPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <AdminPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/login" 
+            element={
+              <ProtectedRoute requireGuest>
+                <LoginPage />
+              </ProtectedRoute>
+            } 
+          />
         </Routes>
-      </AuthProvider>
-    </Router>
+      </Router>
+    </Provider>
   );
 }

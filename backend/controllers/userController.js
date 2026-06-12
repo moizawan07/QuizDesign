@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Role from "../models/Role.js";
 import jwt from "jsonwebtoken";
 
 const generateToken = (id) => {
@@ -7,41 +8,36 @@ const generateToken = (id) => {
   });
 };
 
-export const SignupOrLogin = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
-    const { name, email, idNo, professional } = req.body;
+    const { name, email, idNo, password } = req.body;
 
-    // validation
-    if (!name || !email || !idNo || !professional) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide all required fields",
-      });
+    if (!name || !email || !idNo || !password) {
+      return res.status(400).json({ success: false, message: "Please provide all required fields" });
     }
 
-    // check existing user
-    let user = await User.findOne({
-      $or: [{ email }, { idNo }],
+    const userExists = await User.findOne({ $or: [{ email }, { idNo }] });
+    if (userExists) {
+      return res.status(400).json({ success: false, message: "User with this email or ID already exists" });
+    }
+
+    const userRole = await Role.findOne({ title: "User" });
+    if (!userRole) {
+      return res.status(500).json({ success: false, message: "Default role not found in DB." });
+    }
+
+    let user = await User.create({
+      name,
+      email,
+      idNo,
+      password,
+      role: userRole._id
     });
-
-    let isNewUser = false;
-
-    // create new user if not exists
-    if (!user) {
-      user = await User.create({
-        name,
-        email,
-        idNo,
-        professional,
-      });
-
-      isNewUser = true;
-    }
-
-    // generate token
+    
+    user = await user.populate("role");
     const token = generateToken(user._id);
 
-    res.status(isNewUser ? 201 : 200).json({
+    res.status(201).json({
       success: true,
       token,
       user: {
@@ -49,25 +45,58 @@ export const SignupOrLogin = async (req, res) => {
         name: user.name,
         email: user.email,
         idNo: user.idNo,
-        professional: user.professional,
-        quizAttempt: user.quizAttempt
+        quizAttempt: user.quizAttempt,
+        role: user.role
       },
-      message: isNewUser
-        ? "User registered successfully"
-        : "Login successful",
+      message: "User registered successfully",
     });
-
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email }).select("+password").populate("role");
+    
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Invalid password" });
+    }
+
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        idNo: user.idNo,
+        quizAttempt: user.quizAttempt,
+        role: user.role
+      },
+      message: "Login successful"
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate("role");
     res.status(200).json({
       success: true,
       user,

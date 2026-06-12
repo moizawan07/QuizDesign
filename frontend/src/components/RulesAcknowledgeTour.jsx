@@ -4,18 +4,18 @@ import { useState, useEffect } from "react";
  * RulesAcknowledgeTour
  *
  * Props:
- *   ruleRefs   – array of React refs, one per rule card (from HomeScreen)
- *   onComplete – called when user clicks "Acknowledge All Rules" on last step
+ *   ruleElements – array of DOM elements, one per rule card
+ *   onComplete   – called when user clicks "Acknowledge All Rules" on last step
  */
-export default function RulesAcknowledgeTour({ ruleRefs, onComplete }) {
+export default function RulesAcknowledgeTour({ ruleElements, onComplete }) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState(null);
-  const total = ruleRefs.length;
+  const total = ruleElements.length;
   const isLast = step === total - 1;
   const PAD = 10;
 
   useEffect(() => {
-    const el = ruleRefs[step]?.current;
+    const el = ruleElements[step];
     if (!el) return;
 
     const measure = () => {
@@ -37,7 +37,7 @@ export default function RulesAcknowledgeTour({ ruleRefs, onComplete }) {
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [step]);
+  }, [step, ruleElements]);
 
   const handleNext = () => {
     if (isLast) onComplete();

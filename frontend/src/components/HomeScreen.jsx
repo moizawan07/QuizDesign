@@ -1,6 +1,8 @@
 import { QUIZ_CONFIG } from "../questions";
-import { useEffect, useState } from "react";
-import { useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useGetAvailableQuizzesQuery, useGetMyAttemptsQuery, useGetMyReattemptsQuery, useRequestReattemptMutation } from "../store/apiSlice";
+import { useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
 import RulesAcknowledgeTour from "./RulesAcknowledgeTour";
 
 const rules = [
@@ -37,21 +39,104 @@ const rules = [
 ];
 
 export default function HomeScreen({ onStart, user }) {
+  const dispatch = useDispatch();
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState([]);
   const [msg, setMsg] = useState("");
-  const [tourDone, setTourDone] = useState(JSON.parse(localStorage.getItem('tourComplete')) || false);
-  const ruleRefs = rules.map(() => useRef(null));
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const ruleRefs = useRef([]);
 
-  const handleStart = () => {
-    const attempted = localStorage.getItem("quiz_attempted");
+  const { data: quizzesData } = useGetAvailableQuizzesQuery(undefined, { skip: !user });
+  const { data: attemptsData, isLoading: loadingAttempts } = useGetMyAttemptsQuery(undefined, { skip: !user });
+  const { data: reattemptsData } = useGetMyReattemptsQuery(undefined, { skip: !user });
+  const [requestReattempt, { isLoading: isRequesting }] = useRequestReattemptMutation();
 
-    if (attempted === "true") {
-      setMsg("❌ You are not eligible. You have already attempted the quiz.");
+  const [showReattemptForm, setShowReattemptForm] = useState(false);
+  const [reattemptReason, setReattemptReason] = useState("");
+  const [selectedQuizId, setSelectedQuizId] = useState(localStorage.getItem("selectedQuizId") || "");
+
+  const quizzes = quizzesData?.quizzes || [];
+  const attempts = attemptsData?.attempts || [];
+  const reattempts = reattemptsData?.data || [];
+  const attemptedQuizIds = attempts.map(a => typeof a.quizId === 'object' ? a.quizId?._id : a.quizId);
+
+  const handleSelectQuiz = (e) => {
+    const val = e.target.value;
+    localStorage.setItem("selectedQuizId", val);
+    setSelectedQuizId(val);
+    setShowReattemptForm(false);
+    setReattemptReason("");
+
+    if (loadingAttempts) return;
+
+    if (attemptedQuizIds.includes(val)) {
+      setMsg("");
+      setShowTour(false);
+      setAcknowledged(false);
       return;
     }
 
+    const selectedQuiz = quizzes.find(q => q._id === val);
+    if (selectedQuiz && selectedQuiz.status === "Closed") {
+      setMsg("");
+      setShowTour(false);
+      setAcknowledged(false);
+      return;
+    }
+
+    setMsg("");
+    if (!acknowledged && val) {
+      setShowTour(true);
+    }
+  };
+
+  const handleRequestReattemptSubmit = async () => {
+    if (!selectedQuizId || !reattemptReason.trim()) return;
+    try {
+      await requestReattempt({ quizId: selectedQuizId, reason: reattemptReason }).unwrap();
+      setShowReattemptForm(false);
+      setReattemptReason("");
+      setMsg("✅ Request submitted to admin successfully.");
+    } catch (err) {
+      setMsg(`❌ ${err?.data?.message || "Failed to submit request"}`);
+    }
+  };
+
+  const handleStart = () => {
+    if (user) {
+      if (!selectedQuizId) {
+        setMsg("❌ Please select a quiz from the dropdown first.");
+        return;
+      }
+
+      if (attemptedQuizIds.includes(selectedQuizId)) {
+        setMsg("❌ You already gave this quiz, contact admin.");
+        return;
+      }
+
+      const selectedQuiz = quizzes.find(q => q._id === selectedQuizId);
+      if (selectedQuiz && selectedQuiz.status === "Closed") {
+        return;
+      }
+
+      if (!acknowledged) {
+        setMsg("");
+        setShowTour(true);
+        return;
+      }
+    }
+
     onStart();
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem("selectedQuizId");
+    setSelectedQuizId("");
+    localStorage.removeItem("quiz_attempted");
+    setAcknowledged(false);
+    setMsg("");
   };
 
   useEffect(() => {
@@ -72,28 +157,22 @@ export default function HomeScreen({ onStart, user }) {
 
   return (
     <>
-      {!tourDone && (
+      {showTour && (
         <RulesAcknowledgeTour
-          ruleRefs={ruleRefs}
+          ruleElements={ruleRefs.current}
           onComplete={() => {
-            localStorage.setItem('tourComplete', true);
-            setTourDone(true) 
+            setShowTour(false);
+            setAcknowledged(true);
           }}
         />
       )}
-
-      <div
-        style={{
-          minHeight: "100vh",
-          width: "100%",
-          fontFamily: "'Poppins', sans-serif",
-          background: "#ffffff",
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
+      <div style={{
+        minHeight: "100vh", width: "100%",
+        fontFamily: "'Poppins', sans-serif",
+        background: "#ffffff",
+        display: "flex", flexDirection: "column",
+        position: "relative", overflow: "hidden",
+      }}>
         <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  
@@ -158,179 +237,82 @@ export default function HomeScreen({ onStart, user }) {
       `}</style>
 
         {/* ── BG DECORATION ── */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 0,
-            overflow: "hidden",
-          }}
-        >
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+
           {/* Emerald glow top-right */}
-          <div
-            style={{
-              position: "absolute",
-              top: -140,
-              right: -140,
-              width: 520,
-              height: 520,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 68%)",
-            }}
-          />
+          <div style={{
+            position: "absolute", top: -140, right: -140,
+            width: 520, height: 520, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 68%)",
+          }} />
 
           {/* Light green glow bottom-left */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: -100,
-              left: -100,
-              width: 420,
-              height: 420,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 68%)",
-            }}
-          />
+          <div style={{
+            position: "absolute", bottom: -100, left: -100,
+            width: 420, height: 420, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 68%)",
+          }} />
 
           {/* Rotating ring */}
-          <div
-            style={{
-              position: "absolute",
-              top: "10%",
-              right: "5%",
-              width: 220,
-              height: 220,
-              border: "1px solid rgba(16,185,129,0.12)",
-              borderRadius: "50%",
-              animation: "rotateSlow 20s linear infinite",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: -4,
-                left: "50%",
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: "#10b981",
-                marginLeft: -4,
-                boxShadow: "0 0 10px rgba(16,185,129,0.7)",
-              }}
-            />
+          <div style={{
+            position: "absolute", top: "10%", right: "5%",
+            width: 220, height: 220,
+            border: "1px solid rgba(16,185,129,0.12)",
+            borderRadius: "50%",
+            animation: "rotateSlow 20s linear infinite",
+          }}>
+            <div style={{
+              position: "absolute", top: -4, left: "50%",
+              width: 8, height: 8, borderRadius: "50%",
+              background: "#10b981", marginLeft: -4,
+              boxShadow: "0 0 10px rgba(16,185,129,0.7)",
+            }} />
           </div>
-          <div
-            style={{
-              position: "absolute",
-              top: "10%",
-              right: "5%",
-              width: 140,
-              height: 140,
-              border: "1px solid rgba(16,185,129,0.07)",
-              borderRadius: "50%",
-              marginTop: 40,
-              marginRight: 40,
-              animation: "rotateSlow 14s linear infinite reverse",
-            }}
-          />
+          <div style={{
+            position: "absolute", top: "10%", right: "5%",
+            width: 140, height: 140,
+            border: "1px solid rgba(16,185,129,0.07)",
+            borderRadius: "50%",
+            marginTop: 40, marginRight: 40,
+            animation: "rotateSlow 14s linear infinite reverse",
+          }} />
 
           {/* Dot grid */}
-          <svg
-            width="100%"
-            height="100%"
-            style={{ position: "absolute", inset: 0, opacity: 0.55 }}
-          >
+          <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: 0.55 }}>
             <defs>
-              <pattern
-                id="dotgrid"
-                width="28"
-                height="28"
-                patternUnits="userSpaceOnUse"
-              >
-                <circle
-                  cx="1.5"
-                  cy="1.5"
-                  r="1.2"
-                  fill="#10b981"
-                  fillOpacity="0.12"
-                />
+              <pattern id="dotgrid" width="28" height="28" patternUnits="userSpaceOnUse">
+                <circle cx="1.5" cy="1.5" r="1.2" fill="#10b981" fillOpacity="0.12" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#dotgrid)" />
           </svg>
 
           {/* Vertical divider hint */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: "42%",
-              width: 1,
-              height: "100%",
-              background:
-                "linear-gradient(180deg, transparent, rgba(16,185,129,0.06) 30%, rgba(16,185,129,0.06) 70%, transparent)",
-            }}
-          />
+          <div style={{
+            position: "absolute", top: 0, left: "42%",
+            width: 1, height: "100%",
+            background: "linear-gradient(180deg, transparent, rgba(16,185,129,0.06) 30%, rgba(16,185,129,0.06) 70%, transparent)",
+          }} />
         </div>
 
         {/* ── HEADER ── */}
-        <header
-          style={{
-            position: "relative",
-            zIndex: 20,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 52px",
-            height: 68,
-            borderBottom: "1px solid rgba(0,0,0,0.07)",
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(16px)",
-            animation: mounted ? "fadeUp 0.5s ease both" : "none",
-          }}
-        >
+        <header style={{
+          position: "relative", zIndex: 20,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 52px", height: 85,
+          borderBottom: "1px solid rgba(0,0,0,0.07)",
+          background: "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(16px)",
+          animation: mounted ? "fadeUp 0.5s ease both" : "none",
+        }}>
           {/* Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 11,
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 19,
-                animation: mounted
-                  ? "glowPulse 3s ease-in-out infinite"
-                  : "none",
-              }}
-            >
-              📝
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <img src="/logo.png" alt="Logo" style={{ height: 32, width: "auto", objectFit: "contain", display: "block", borderRadius: 6 }} />
             <div>
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: 16,
-                  color: "#0f172a",
-                  letterSpacing: "0.01em",
-                }}
-              >
+              <div style={{ fontWeight: 700, fontSize: 18, color: "#0f172a", letterSpacing: "0.01em" }}>
                 QuizPro
               </div>
-              <div
-                style={{
-                  fontWeight: 400,
-                  fontSize: 10,
-                  color: "#94a3b8",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                }}
-              >
+              <div style={{ fontWeight: 400, fontSize: 11, color: "#94a3b8", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Assessment Platform
               </div>
             </div>
@@ -340,364 +322,114 @@ export default function HomeScreen({ onStart, user }) {
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {user && (
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #10b981, #059669)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "#fff",
-                    boxShadow: "0 2px 10px rgba(16,185,129,0.35)",
-                  }}
-                >
+                <div style={{
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 700, fontSize: 14, color: "#fff",
+                  boxShadow: "0 2px 10px rgba(16,185,129,0.35)",
+                }}>
                   {user.name?.charAt(0).toUpperCase()}
                 </div>
-                <span
-                  style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}
-                >
+                <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>
                   {user.name}
                 </span>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: "transparent", border: "1px solid #ef4444",
+                    color: "#ef4444", padding: "4px 10px", borderRadius: 6,
+                    fontSize: 11, fontWeight: 600, cursor: "pointer", marginLeft: 8
+                  }}
+                >
+                  Logout
+                </button>
               </div>
             )}
-            <div
-              style={{
-                background: "rgba(16,185,129,0.08)",
-                border: "1px solid rgba(16,185,129,0.22)",
-                borderRadius: 8,
-                padding: "6px 14px",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#059669",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Quiz Mode
-              </span>
-            </div>
           </div>
         </header>
 
         {/* ── MAIN ── */}
-        <main
-          style={{
-            flex: 1,
-            position: "relative",
-            zIndex: 10,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 0,
-            width: "100%",
-            margin: "0 auto",
-            padding: "52px 95px",
-            alignItems: "center",
-          }}
-        >
-          {/* LEFT */}
-          <div
-            style={{
-              paddingRight: 56,
-              animation: mounted ? "fadeUp 0.65s ease 0.1s both" : "none",
-            }}
-          >
+        <main style={{
+          flex: 1,
+          position: "relative",
+          zIndex: 10,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 0,
+          width: "100%",
+          margin: "0 auto",
+          padding: "0 95px",
+          minHeight: "calc(100vh - 85px - 55px)",
+          alignItems: "center",
+        }}>
+
+          {/* LEFT - Vertically centered using alignSelf */}
+          <div style={{
+            paddingRight: 56,
+            animation: mounted ? "fadeUp 0.65s ease 0.1s both" : "none",
+            alignSelf: "center",  // This vertically centers the left column content
+          }}>
+
             {/* Badge */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "rgba(16,185,129,0.08)",
-                border: "1px solid rgba(16,185,129,0.22)",
-                borderRadius: 8,
-                padding: "6px 16px",
-                marginBottom: 28,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#059669",
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                }}
-              >
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "rgba(16,185,129,0.08)",
+              border: "1px solid rgba(16,185,129,0.22)",
+              borderRadius: 8, padding: "6px 16px", marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#059669", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                 Quiz Assessment
               </span>
             </div>
 
             {/* Heading */}
-            <h1
-              style={{
-                fontSize: "clamp(32px, 4vw, 54px)",
-                fontWeight: 800,
-                color: "#0f172a",
-                lineHeight: 1.08,
-                marginBottom: 20,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Ready to test
-              <br />
+            <h1 style={{
+              fontSize: "clamp(32px, 4vw, 54px)", fontWeight: 800,
+              color: "#0f172a", lineHeight: 1.08, marginBottom: 20,
+              letterSpacing: "-0.02em",
+            }}>
+              Ready to test<br />
               your{" "}
-              <span
-                style={{
-                  position: "relative",
-                  display: "inline-block",
-                  color: "#10b981",
-                }}
-              >
+              <span style={{ position: "relative", display: "inline-block", color: "#10b981" }}>
                 knowledge?
-                <span
-                  style={{
-                    position: "absolute",
-                    bottom: -4,
-                    left: 0,
-                    right: 0,
-                    height: 3,
-                    background: "linear-gradient(90deg, #10b981, transparent)",
-                    borderRadius: 2,
-                  }}
-                />
+                <span style={{
+                  position: "absolute", bottom: -4, left: 0, right: 0, height: 5,
+                  background: "linear-gradient(90deg, #10b981, transparent)",
+                  borderRadius: 3,
+                }} />
               </span>
             </h1>
 
-            <p
-              style={{
-                fontSize: 14,
-                fontWeight: 400,
-                color: "#64748b",
-                lineHeight: 1.85,
-                marginBottom: 40,
-                maxWidth: 380,
-              }}
-            >
-              A timed, proctored quiz to assess your understanding. Answer
-              carefully — every mark counts. Good luck!
+            <p style={{
+              fontSize: 14, fontWeight: 400,
+              color: "#64748b", lineHeight: 1.85, marginBottom: 40,
+              maxWidth: 380,
+            }}>
+              A timed, proctored quiz to assess your understanding. Answer carefully — every mark counts. Good luck!
             </p>
 
-            {/* Stats */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4,1fr)",
-                gap: 12,
-                marginBottom: 40,
-              }}
-            >
-              {[
-                { label: "Questions", value: "50" },
-                { label: "Minutes", value: `${QUIZ_CONFIG.TIMER_MINUTES}` },
-                { label: "Marks", value: "50" },
-                { label: "Pass", value: "40" },
-              ].map((s, i) => (
-                <div
-                  key={i}
-                  className="stat-pill"
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 12,
-                    padding: "16px 10px",
-                    textAlign: "center",
-                    animation: mounted
-                      ? `fadeUp 0.5s ease ${0.25 + i * 0.07}s both`
-                      : "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 26,
-                      color: "#10b981",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {s.value}
+            {/* Main Action Card */}
+            {user ? (
+              <div style={{
+                background: "#ffffff",
+                padding: 32,
+                borderRadius: 20,
+                border: "1px solid rgba(16,185,129,0.15)",
+                marginBottom: 20,
+                boxShadow: "0 20px 40px -15px rgba(16,185,129,0.1), 0 0 0 1px rgba(16,185,129,0.05)",
+                position: "relative",
+                overflow: "hidden"
+              }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg, #10b981, #34d399)" }} />
+
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", background: "#ecfdf5", color: "#10b981" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                   </div>
-                  <div
-                    style={{
-                      fontWeight: 400,
-                      fontSize: 10,
-                      color: "#94a3b8",
-                      marginTop: 6,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA Button */}
-            <button
-              className="cta-btn"
-              onClick={handleStart}
-              style={{
-                width: "100%",
-                padding: "17px 0",
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                color: "#fff",
-                border: "none",
-                borderRadius: 12,
-                fontSize: 16,
-                fontWeight: 700,
-                fontFamily: "'Poppins', sans-serif",
-                cursor: "pointer",
-                letterSpacing: "0.02em",
-                boxShadow: "0 8px 28px rgba(16,185,129,0.28)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-              }}
-            >
-              <span style={{ fontSize: 18 }}>🚀</span>
-              Begin Quiz Now
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M4 9h10M10 5l4 4-4 4"
-                  stroke="white"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-
-            {msg && (
-              <div
-                style={{
-                  marginTop: 12,
-                  color: "#ef4444",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textAlign: "center",
-                  borderRadius: 4,
-                  paddingBlock: 5,
-                  paddingInline: 8,
-                  // display: "inline-block",
-                }}
-                className="bg-red-200"
-              >
-                {msg}
-              </div>
-            )}
-
-            <p
-              style={{
-                marginTop: 16,
-                fontSize: 11,
-                fontWeight: 400,
-                color: "#94a3b8",
-                textAlign: "center",
-              }}
-            >
-              By starting, you agree to abide by all the rules listed.
-            </p>
-          </div>
-
-          {/* RIGHT */}
-          <div
-            style={{
-              paddingLeft: 56,
-              animation: mounted ? "fadeLeft 0.65s ease 0.2s both" : "none",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 22,
-              }}
-            >
-              <div
-                style={{
-                  width: 3,
-                  height: 18,
-                  borderRadius: 4,
-                  background: "linear-gradient(180deg, #10b981, #6366f1)",
-                }}
-              />
-              <h2
-                style={{
-                  fontWeight: 600,
-                  fontSize: 13,
-                  color: "#334155",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.15em",
-                }}
-              >
-                Rules & Instructions
-              </h2>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {rules.map((rule, i) => (
-                <div
-                  key={i}
-                  ref={ruleRefs[i]}
-                  className={`rule-card${shown.includes(i) ? " vis" : ""}`}
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 12,
-                    padding: "13px 16px",
-                    display: "flex",
-                    gap: 13,
-                    alignItems: "center",
-                    cursor: "default",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 10,
-                      flexShrink: 0,
-                      background: "rgba(16,185,129,0.08)",
-                      border: "1px solid rgba(16,185,129,0.15)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    {rule.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        fontSize: 13,
-                        color: "#0f172a",
-                        marginBottom: 3,
-                      }}
-                    >
-                      {rule.title}
-                    </div>
-                    <div
-                      style={{
-                        fontWeight: 400,
-                        fontSize: 11.5,
-                        color: "#94a3b8",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {rule.desc}
-                    </div>
+                  <div>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", margin: 0 }}>Assessment Module</h3>
+                    <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>Select your assigned quiz</div>
                   </div>
                   <div
                     style={{
@@ -712,61 +444,247 @@ export default function HomeScreen({ onStart, user }) {
                     }}
                   />
                 </div>
+
+                <select
+                  style={{ width: "100%", padding: "16px 20px", borderRadius: 12, border: "2px solid #e2e8f0", fontSize: 15, color: "#0f172a", outline: "none", marginBottom: 20, fontFamily: "'Poppins', sans-serif", backgroundColor: "#f8fafc", transition: "all 0.3s ease", cursor: "pointer", appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center", backgroundSize: "18px" }}
+                  onChange={handleSelectQuiz}
+                  value={selectedQuizId}
+                  onFocus={(e) => { e.target.style.borderColor = "#10b981"; e.target.style.boxShadow = "0 0 0 4px rgba(16,185,129,0.1)"; e.target.style.backgroundColor = "#ffffff"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "none"; e.target.style.backgroundColor = "#f8fafc"; }}
+                >
+                  <option value="" disabled> Choose a quiz </option>
+                  {quizzes.map(q => (
+                    <option key={q._id} value={q._id}>
+                      {q.title}
+                    </option>
+                  ))}
+                </select>
+
+                {(() => {
+                  if (!selectedQuizId) return null;
+
+                  const selectedQuiz = quizzes.find(q => q._id === selectedQuizId);
+
+                  const existingReq = reattempts.find(r => r.quizId?._id === selectedQuizId || r.quizId === selectedQuizId);
+                  if (existingReq) {
+                    if (existingReq.status === "Pending") {
+                      return (
+                        <div style={{ padding: 16, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#92400e" }}>
+                          ⏳ <strong>Request Pending.</strong> Admin is reviewing your re-attempt request.
+                        </div>
+                      );
+                    } else if (existingReq.status === "Rejected") {
+                      return (
+                        <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
+                          ❌ <strong>Request Denied.</strong> Your re-attempt request was rejected by the admin.
+                        </div>
+                      );
+                    } else if (existingReq.status === "Approved") {
+                      return (
+                        <div style={{ padding: 16, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#475569" }}>
+                          ⚠️ <strong>Attempts Exhausted.</strong> You have already used your approved re-attempt for this quiz.
+                        </div>
+                      );
+                    }
+                  }
+
+                  if (attemptedQuizIds.includes(selectedQuizId)) {
+                    if (selectedQuiz && selectedQuiz.status === "Closed") {
+                      return (
+                        <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
+                          ❌ <strong>Quiz Closed.</strong> This quiz is currently closed and not accepting any re-attempts.
+                        </div>
+                      );
+                    }
+
+                    if (showReattemptForm) {
+                      return (
+                        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                          <textarea
+                            placeholder="Please explain why you need a re-attempt..."
+                            value={reattemptReason}
+                            onChange={(e) => setReattemptReason(e.target.value)}
+                            style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13, minHeight: 80, fontFamily: "'Poppins', sans-serif" }}
+                          />
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={() => setShowReattemptForm(false)} style={{ flex: 1, padding: "10px", background: "#f1f5f9", color: "#475569", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={handleRequestReattemptSubmit} disabled={isRequesting || !reattemptReason.trim()} style={{ flex: 1, padding: "10px", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, cursor: !reattemptReason.trim() ? "not-allowed" : "pointer", opacity: !reattemptReason.trim() ? 0.6 : 1 }}>
+                              {isRequesting ? "Submitting..." : "Send Request"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{ marginTop: 16 }}>
+                        <div style={{ padding: 12, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, textAlign: "center", fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+                          ℹ️ You have already completed this quiz.
+                        </div>
+                        <button onClick={() => setShowReattemptForm(true)} style={{
+                          width: "100%", padding: "14px 0",
+                          background: "#fff", color: "#10b981", border: "1.5px solid #10b981", borderRadius: 8,
+                          fontSize: 14, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
+                          cursor: "pointer", transition: "all 0.2s"
+                        }}>
+                          Request Re-attempt
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  if (selectedQuiz && selectedQuiz.status === "Closed") {
+                    return (
+                      <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
+                        ❌ <strong>Quiz Closed.</strong> This quiz is currently closed and not accepting any attempts.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button className="cta-btn" onClick={handleStart} disabled={!acknowledged} style={{
+                      width: "100%", padding: "14px 0",
+                      background: acknowledged ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "#cbd5e1",
+                      color: acknowledged ? "#fff" : "#94a3b8", border: "none", borderRadius: 8,
+                      fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                      cursor: acknowledged ? "pointer" : "not-allowed", letterSpacing: "0.02em",
+                      boxShadow: acknowledged ? "0 8px 28px rgba(16,185,129,0.28)" : "none",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                      transition: "all 0.3s ease"
+                    }}>
+                      <span style={{ fontSize: 16, filter: acknowledged ? "none" : "grayscale(100%) opacity(0.5)" }}>🚀</span>
+                      Begin Quiz Now
+                    </button>
+                  );
+                })()}
+              </div>
+            ) : (
+              <button className="cta-btn" onClick={onStart} style={{
+                width: "100%", padding: "17px 0",
+                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                color: "#fff", border: "none", borderRadius: 12,
+                fontSize: 16, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                cursor: "pointer", letterSpacing: "0.02em",
+                boxShadow: "0 8px 28px rgba(16,185,129,0.28)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              }}>
+                <span style={{ fontSize: 18 }}>🔐</span>
+                Login to Begin
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M4 9h10M10 5l4 4-4 4" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+
+            {msg && (
+              <div style={{
+                marginTop: 12,
+                color: "#ef4444",
+                fontSize: 11,
+                fontWeight: 600,
+                textAlign: "center",
+                borderRadius: 4,
+                paddingBlock: 5,
+                paddingInline: 8,
+              }}>
+                {msg}
+              </div>
+            )}
+
+            <p style={{ marginTop: 16, fontSize: 11, fontWeight: 400, color: "#94a3b8", textAlign: "center" }}>
+              By starting, you agree to abide by all the rules listed.
+            </p>
+          </div>
+
+          {/* RIGHT */}
+          <div style={{
+            paddingLeft: 56,
+            animation: mounted ? "fadeLeft 0.65s ease 0.2s both" : "none",
+            alignSelf: "center",  // This also vertically centers the right column content
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 42, marginTop: "20px" }}>
+              <div style={{
+                width: 3, height: 18, borderRadius: 4,
+                background: "linear-gradient(180deg, #10b981, #6366f1)",
+              }} />
+              <h2 style={{
+                fontWeight: 600, fontSize: 13,
+                color: "#334155",
+                textTransform: "uppercase", letterSpacing: "0.15em",
+              }}>
+                Rules & Instructions
+              </h2>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {rules.map((rule, i) => (
+                <div
+                  key={i}
+                  ref={(el) => (ruleRefs.current[i] = el)}
+                  className={`rule-card${shown.includes(i) ? " vis" : ""}`}
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 12, padding: "13px 16px",
+                    display: "flex", gap: 13, alignItems: "center",
+                    cursor: "default",
+                  }}
+                >
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                    background: "rgba(16,185,129,0.08)",
+                    border: "1px solid rgba(16,185,129,0.15)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 17,
+                  }}>
+                    {rule.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a", marginBottom: 3 }}>
+                      {rule.title}
+                    </div>
+                    <div style={{ fontWeight: 400, fontSize: 11.5, color: "#94a3b8", lineHeight: 1.6 }}>
+                      {rule.desc}
+                    </div>
+                  </div>
+                  <div style={{
+                    width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
+                    background: "#10b981",
+                    boxShadow: "0 0 8px rgba(16,185,129,0.5)",
+                    animation: "pulseDot 2s ease-in-out infinite",
+                    animationDelay: `${i * 0.3}s`,
+                  }} />
+                </div>
               ))}
             </div>
 
             {/* Warning */}
-            <div
-              style={{
-                marginTop: 14,
-                padding: "14px 16px",
-                borderRadius: 12,
-                background: "#fffbeb",
-                border: "1px solid #fde68a",
-                display: "flex",
-                gap: 12,
-                alignItems: "flex-start",
-              }}
-            >
-              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
-                ⚠️
-              </span>
-              <p
-                style={{
-                  fontWeight: 400,
-                  fontSize: 12,
-                  color: "#92400e",
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong style={{ fontWeight: 600, color: "#78350f" }}>
-                  Warning:{" "}
-                </strong>
-                Cheating or using unauthorized resources will result in
-                immediate disqualification. All activity is monitored throughout
-                the session.
+            <div style={{
+              marginTop: 14, padding: "14px 16px", borderRadius: 12,
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+              display: "flex", gap: 12, alignItems: "flex-start",
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⚠️</span>
+              <p style={{ fontWeight: 400, fontSize: 12, color: "#92400e", lineHeight: 1.7 }}>
+                <strong style={{ fontWeight: 600, color: "#78350f" }}>Warning: </strong>
+                Cheating or using unauthorized resources will result in immediate disqualification.
+                All activity is monitored throughout the session.
               </p>
             </div>
           </div>
         </main>
 
         {/* ── FOOTER ── */}
-        <footer
-          style={{
-            position: "relative",
-            zIndex: 10,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "18px 52px",
-            borderTop: "1px solid rgba(0,0,0,0.06)",
-            fontSize: 12,
-            fontWeight: 400,
-            color: "#000",
-            letterSpacing: "0.08em",
-          }}
-        >
-          © 2026 QUIZPRO · ALL RIGHTS RESERVED
+        <footer style={{
+          position: "relative", zIndex: 10,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "18px 52px",
+          borderTop: "1px solid rgba(0,0,0,0.06)",
+          fontSize: 12, fontWeight: 400,
+          marginTop: 30,
+          color: "#000", letterSpacing: "0.08em",
+        }}>
+          © 2025 QUIZPRO · ALL RIGHTS RESERVED
         </footer>
       </div>
     </>
