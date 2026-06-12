@@ -31,6 +31,17 @@ export default function AdminPage() {
   const [quizzes, setQuizzes] = useState([]);
   const [results, setResults] = useState([]);
   const [reattempts, setReattempts] = useState([]);
+  const [users, setUsers] = useState([]);
+  
+  const [quizzesPage, setQuizzesPage] = useState(1);
+  const [resultsPage, setResultsPage] = useState(1);
+  const [reattemptsPage, setReattemptsPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(1);
+  
+  const [quizzesMeta, setQuizzesMeta] = useState({});
+  const [resultsMeta, setResultsMeta] = useState({});
+  const [reattemptsMeta, setReattemptsMeta] = useState({});
+  const [usersMeta, setUsersMeta] = useState({});
 
   // Unified Quiz Builder State
   const [editingQuiz, setEditingQuiz] = useState(null); // null means list view. {} means new. { _id, title, ... } means editing existing.
@@ -49,26 +60,38 @@ export default function AdminPage() {
   const [success, setSuccess] = useState("");
   const [viewingResult, setViewingResult] = useState(null);
 
+  const [searchQuiz, setSearchQuiz] = useState("");
+  const [searchUser, setSearchUser] = useState("");
+
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap";
     document.head.appendChild(link);
-    fetchData();
     return () => document.head.removeChild(link);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [quizzesPage, resultsPage, reattemptsPage, usersPage, searchQuiz, searchUser]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [quizzesRes, resultsRes, reattemptsRes] = await Promise.all([
-        api.get(`/admin/quizzes`),
-        api.get(`/admin/results`),
-        api.get(`/admin/reattempts`)
+      const [quizzesRes, resultsRes, reattemptsRes, usersRes] = await Promise.all([
+        api.get(`/admin/quizzes?page=${quizzesPage}&limit=10&search=${encodeURIComponent(searchQuiz)}`),
+        api.get(`/admin/results?page=${resultsPage}&limit=10`),
+        api.get(`/admin/reattempts?page=${reattemptsPage}&limit=10`),
+        api.get(`/admin/users?page=${usersPage}&limit=10&search=${encodeURIComponent(searchUser)}`)
       ]);
       setQuizzes(quizzesRes.data.data);
+      setQuizzesMeta(quizzesRes.data.pagination || {});
       setResults(resultsRes.data.data);
+      setResultsMeta(resultsRes.data.pagination || {});
       setReattempts(reattemptsRes.data.data);
+      setReattemptsMeta(reattemptsRes.data.pagination || {});
+      setUsers(usersRes.data.data || []);
+      setUsersMeta(usersRes.data.pagination || {});
     } catch (err) {
       console.error(err);
       setError("Failed to fetch data");
@@ -140,6 +163,22 @@ export default function AdminPage() {
       fetchData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update request");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setSuccess(""), 3000);
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleDelete = async (type, id) => {
+    if(!window.confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) return;
+    try {
+      setLoading(true);
+      await api.delete(`/admin/${type}/${id}`);
+      setSuccess(`${type} deleted successfully!`);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.message || `Failed to delete ${type}`);
     } finally {
       setLoading(false);
       setTimeout(() => setSuccess(""), 3000);
@@ -241,8 +280,20 @@ export default function AdminPage() {
   const menuItems = [
     { id: "dashboard", icon: <DashboardIcon />, label: "Dashboard" },
     { id: "quizzes", icon: <QuizzesIcon />, label: "Manage Quizzes" },
-    { id: "reattempts", icon: <BellIcon />, label: "Requests" }
+    { id: "reattempts", icon: <BellIcon />, label: "Requests" },
+    { id: "users", icon: <UsersIcon />, label: "Manage Users" }
   ];
+
+  const renderPagination = (meta, setPage) => {
+    if (!meta || !meta.pages || meta.pages <= 1) return null;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 24, paddingBottom: 24 }}>
+        <button onClick={() => setPage(Math.max(1, meta.page - 1))} disabled={meta.page === 1} className="btn-secondary" style={{ padding: '6px 12px' }}>Previous</button>
+        <span style={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500, color: '#475569' }}>Page {meta.page} of {meta.pages}</span>
+        <button onClick={() => setPage(Math.min(meta.pages, meta.page + 1))} disabled={meta.page === meta.pages} className="btn-secondary" style={{ padding: '6px 12px' }}>Next</button>
+      </div>
+    );
+  };
 
   return (
     <div style={{
@@ -425,6 +476,7 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+                {renderPagination(resultsMeta, setResultsPage)}
               </div>
             </div>
           )}
@@ -521,9 +573,12 @@ export default function AdminPage() {
                   <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Manage Quizzes</h1>
                   <p style={{ fontSize: 15, color: "#64748b" }}>Create, configure, and manage assessment configurations.</p>
                 </div>
-                <button onClick={openBuilderForNew} className="btn-primary">
-                  <PlusIcon /> Create New Quiz
-                </button>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <input type="text" value={searchQuiz} onChange={e => { setSearchQuiz(e.target.value); setQuizzesPage(1); }} placeholder="Search Quizzes..." style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, outline: "none", fontSize: 14 }} />
+                  <button onClick={openBuilderForNew} className="btn-primary">
+                    <PlusIcon /> Create New Quiz
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 24 }}>
@@ -558,12 +613,16 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <button onClick={() => openBuilderForExisting(q)} className="btn-secondary" style={{ width: "100%" }}>
-                      Configure Quiz
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => openBuilderForExisting(q)} className="btn-secondary" style={{ flex: 1 }}>
+                        Configure Quiz
+                      </button>
+                      <button onClick={() => handleDelete('quizzes', q._id)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 16px', fontWeight: 500, cursor: 'pointer' }}>Delete</button>
+                    </div>
                   </div>
                 ))}
               </div>
+              {renderPagination(quizzesMeta, setQuizzesPage)}
             </div>
           )}
 
@@ -763,11 +822,12 @@ export default function AdminPage() {
                           <th className="table-header">Final Score</th>
                           <th className="table-header">Timestamp</th>
                           <th className="table-header">Flag</th>
+                          <th className="table-header">Action</th>
                         </tr>
                       </thead>
                       <tbody>
                         {results.filter(r => r.quizId?._id === editingQuiz._id || r.quizId === editingQuiz._id).length === 0 ? (
-                          <tr><td colSpan="5" style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No data collected for this assessment yet.</td></tr>
+                          <tr><td colSpan="6" style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No data collected for this assessment yet.</td></tr>
                         ) : (
                           results.filter(r => r.quizId?._id === editingQuiz._id || r.quizId === editingQuiz._id).map(r => {
                             const noteLabel = (!r.note || r.note.includes("Manual")) ? "Standard" : r.note.includes("Tab") ? "Violation" : r.note.includes("Time") ? "Timeout" : r.note;
@@ -784,6 +844,9 @@ export default function AdminPage() {
                                   }}>
                                     {noteLabel}
                                   </span>
+                                </td>
+                                <td className="table-cell">
+                                  <button onClick={() => { setViewingResult(r); setActiveTab("dashboard"); }} style={{ color: "#10b981", background: "transparent", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>View</button>
                                 </td>
                               </tr>
                             )
@@ -858,7 +921,7 @@ export default function AdminPage() {
                                   <button onClick={() => handleReattemptAction(req._id, "Rejected")} disabled={loading} style={{ background: "#ef4444", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>Reject</button>
                                 </div>
                               ) : (
-                                <span style={{ fontSize: 13, color: "#94a3b8" }}>No action needed</span>
+                                <button onClick={() => handleDelete('reattempts', req._id)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
                               )}
                             </td>
                           </tr>
@@ -867,6 +930,72 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+                {renderPagination(reattemptsMeta, setReattemptsPage)}
+              </div>
+            </div>
+          )}
+
+          {/* USERS TAB */}
+          {activeTab === "users" && (
+            <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+              <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <div>
+                  <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Manage Users</h1>
+                  <p style={{ fontSize: 15, color: "#64748b" }}>View and manage registered users.</p>
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <input type="text" value={searchUser} onChange={e => { setSearchUser(e.target.value); setUsersPage(1); }} placeholder="Search Users by Name, ID, or Email..." style={{ padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 6, outline: "none", fontSize: 14, minWidth: 260 }} />
+                  <button onClick={fetchData} className="btn-secondary" style={{ padding: "8px 16px", fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}>
+                    <SyncIcon /> Refresh Users
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+                    <thead>
+                      <tr>
+                        <th className="table-header">Name</th>
+                        <th className="table-header">Email Address</th>
+                        <th className="table-header">ID/Registration</th>
+                        <th className="table-header">Role</th>
+                        <th className="table-header">Joined</th>
+                        <th className="table-header">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.length === 0 ? (
+                        <tr><td colSpan="6" style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No users found.</td></tr>
+                      ) : (
+                        users.map(u => (
+                          <tr key={u._id} className="hover:bg-slate-50" style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td className="table-cell" style={{ fontWeight: 500, color: "#0f172a" }}>{u.name}</td>
+                            <td className="table-cell" style={{ color: "#475569" }}>{u.email}</td>
+                            <td className="table-cell" style={{ color: "#334155" }}>{u.idNo || 'N/A'}</td>
+                            <td className="table-cell">
+                              <span style={{
+                                background: u.role === "admin" ? "#fef2f2" : "#f0fdf4",
+                                color: u.role === "admin" ? "#dc2626" : "#16a34a",
+                                border: `1px solid ${u.role === "admin" ? "#fecaca" : "#bbf7d0"}`,
+                                padding: "4px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600
+                              }}>
+                                {u.role === 'admin' ? 'Administrator' : 'Student'}
+                              </span>
+                            </td>
+                            <td className="table-cell" style={{ color: "#64748b", fontSize: 13 }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                            <td className="table-cell">
+                              {u.role !== 'admin' && (
+                                <button onClick={() => handleDelete('users', u._id)} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Delete User</button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {renderPagination(usersMeta, setUsersPage)}
               </div>
             </div>
           )}

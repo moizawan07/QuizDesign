@@ -16,7 +16,15 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please provide all required fields" });
     }
 
-    const userExists = await User.findOne({ $or: [{ email }, { idNo }] });
+    const trimmedEmail = email.toLowerCase().trim();
+    const trimmedIdNo = idNo.trim();
+
+    const userExists = await User.findOne({ 
+      $or: [
+        { email: { $regex: new RegExp(`^${trimmedEmail}$`, 'i') } },
+        { idNo: trimmedIdNo }
+      ] 
+    });
     if (userExists) {
       return res.status(400).json({ success: false, message: "User with this email or ID already exists" });
     }

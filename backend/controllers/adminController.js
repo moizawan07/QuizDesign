@@ -2,6 +2,8 @@ import Quiz from "../models/Quiz.js";
 import QuizResult from "../models/QuizResult.js";
 import Question from "../models/Question.js";
 import Reattempt from "../models/Reattempt.js";
+import User from "../models/User.js";
+import Role from "../models/Role.js";
 
 // --- QUIZZES ---
 export const createQuiz = async (req, res, next) => {
@@ -26,13 +28,27 @@ export const createQuiz = async (req, res, next) => {
 
 export const getQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find().sort("-createdAt");
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+    const query = search ? { title: { $regex: search, $options: "i" } } : {};
+
+    const quizzes = await Quiz.find(query).sort("-createdAt").skip(skip).limit(limit);
+    const total = await Quiz.countDocuments(query);
+
     // Also attach question counts
     const enrichedQuizzes = await Promise.all(quizzes.map(async (q) => {
       const count = await Question.countDocuments({ quizId: q._id });
       return { ...q.toObject(), numberOfQuestions: count };
     }));
-    res.status(200).json({ success: true, data: enrichedQuizzes });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: enrichedQuizzes,
+      pagination: { total, page, pages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     next(error);
   }
@@ -103,8 +119,18 @@ export const getQuestionsForQuiz = async (req, res, next) => {
 // --- RESULTS ---
 export const getAllResults = async (req, res, next) => {
   try {
-    const results = await QuizResult.find().sort("-createdAt");
-    res.status(200).json({ success: true, data: results });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const results = await QuizResult.find().populate("userId").populate("quizId").sort("-createdAt").skip(skip).limit(limit);
+    const total = await QuizResult.countDocuments();
+
+    res.status(200).json({ 
+      success: true, 
+      data: results,
+      pagination: { total, page, pages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     next(error);
   }
@@ -113,11 +139,24 @@ export const getAllResults = async (req, res, next) => {
 // --- REATTEMPTS ---
 export const getAllReattempts = async (req, res, next) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const requests = await Reattempt.find()
       .populate("userId", "name email")
       .populate("quizId", "title")
-      .sort("-createdAt");
-    res.status(200).json({ success: true, data: requests });
+      .sort("-createdAt")
+      .skip(skip)
+      .limit(limit);
+      
+    const total = await Reattempt.countDocuments();
+
+    res.status(200).json({ 
+      success: true, 
+      data: requests,
+      pagination: { total, page, pages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     next(error);
   }
@@ -145,6 +184,89 @@ export const updateReattemptStatus = async (req, res, next) => {
     await request.save();
 
     res.status(200).json({ success: true, data: request });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- USERS ---
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+    const adminRole = await Role.findOne({ title: "Admin" });
+
+    let query = {};
+    if (adminRole) {
+      query.role = { $ne: adminRole._id };
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { idNo: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const users = await User.find(query).populate("role").sort("-createdAt").skip(skip).limit(limit);
+    const total = await User.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: users,
+      pagination: { total, page, pages: Math.ceil(total / limit) }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    
+    // Also delete user's results and reattempts
+    await QuizResult.deleteMany({ userId: id });
+    await Reattempt.deleteMany({ userId: id });
+
+    res.status(200).json({ success: true, message: "User and related data deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- DELETE QUIZ ---
+export const deleteQuiz = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const quiz = await Quiz.findByIdAndDelete(id);
+    if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found" });
+    
+    // Cascade delete
+    await Question.deleteMany({ quizId: id });
+    await QuizResult.deleteMany({ quizId: id });
+    await Reattempt.deleteMany({ quizId: id });
+
+    res.status(200).json({ success: true, message: "Quiz and related data deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- DELETE REATTEMPT ---
+export const deleteReattempt = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const request = await Reattempt.findByIdAndDelete(id);
+    if (!request) return res.status(404).json({ success: false, message: "Request not found" });
+
+    res.status(200).json({ success: true, message: "Reattempt request deleted" });
   } catch (error) {
     next(error);
   }
