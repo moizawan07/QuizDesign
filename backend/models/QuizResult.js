@@ -26,7 +26,6 @@ const QuizResultSchema = new mongoose.Schema(
         questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
         questionText: String,
         selectedOption: String,
-        userCode: String,
         correctAnswer: String,
         isCorrect: Boolean,
       }

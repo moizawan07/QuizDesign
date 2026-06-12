@@ -1,6 +1,7 @@
 import Quiz from "../models/Quiz.js";
 import QuizResult from "../models/QuizResult.js";
 import Question from "../models/Question.js";
+import Reattempt from "../models/Reattempt.js";
 
 // --- QUIZZES ---
 export const createQuiz = async (req, res, next) => {
@@ -57,7 +58,7 @@ export const updateQuizStatus = async (req, res, next) => {
 // --- QUESTIONS ---
 export const createQuestion = async (req, res, next) => {
   try {
-    const { quizId, questionText, options, correctAnswer, difficulty, questionCategory, isLogical, testCases, functionName } = req.body;
+    const { quizId, questionText, options, correctAnswer, difficulty, questionCategory } = req.body;
     
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
@@ -71,10 +72,8 @@ export const createQuestion = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Quiz ID, Question Text and Category are required" });
     }
 
-    if (!isLogical) {
-      if (!options || options.length < 2 || !correctAnswer) {
-        return res.status(400).json({ success: false, message: "For regular MCQ questions, at least two options and a correct answer are required" });
-      }
+    if (!options || options.length < 2 || !correctAnswer) {
+      return res.status(400).json({ success: false, message: "For regular MCQ questions, at least two options and a correct answer are required" });
     }
 
     const question = await Question.create({
@@ -83,10 +82,7 @@ export const createQuestion = async (req, res, next) => {
       options: options || [],
       correctAnswer: correctAnswer || "",
       difficulty: difficulty || "Medium",
-      questionCategory,
-      isLogical: !!isLogical,
-      testCases: testCases || [],
-      functionName: functionName || ""
+      questionCategory
     });
     res.status(201).json({ success: true, data: question });
   } catch (error) {
@@ -114,38 +110,43 @@ export const getAllResults = async (req, res, next) => {
   }
 };
 
-export const updateResultScore = async (req, res, next) => {
+// --- REATTEMPTS ---
+export const getAllReattempts = async (req, res, next) => {
   try {
-    const { resultId } = req.params;
-    const { questionId, isCorrect } = req.body;
-
-    const result = await QuizResult.findById(resultId);
-    if (!result) return res.status(404).json({ success: false, message: "Result not found" });
-
-    let correctCount = 0;
-    let wrongCount = 0;
-    let unattemptedCount = 0;
-
-    const updatedAnswers = result.detailedAnswers.map(ans => {
-      if (ans.questionId === questionId) {
-        ans.isCorrect = isCorrect;
-      }
-      if (ans.isCorrect === true) correctCount++;
-      else if (ans.isCorrect === false) wrongCount++;
-      else unattemptedCount++;
-      return ans;
-    });
-
-    result.detailedAnswers = updatedAnswers;
-    result.correct = correctCount;
-    result.wrong = wrongCount;
-    result.unattempted = unattemptedCount;
-    result.percentage = Math.round((correctCount / result.total) * 100);
-
-    await result.save();
-
-    res.status(200).json({ success: true, data: result, message: "Grade updated successfully" });
+    const requests = await Reattempt.find()
+      .populate("userId", "name email")
+      .populate("quizId", "title")
+      .sort("-createdAt");
+    res.status(200).json({ success: true, data: requests });
   } catch (error) {
     next(error);
   }
 };
+
+export const updateReattemptStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["Approved", "Rejected"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const request = await Reattempt.findById(id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Request not found" });
+    }
+
+    if (status === "Approved") {
+      await QuizResult.deleteOne({ userId: request.userId, quizId: request.quizId });
+    }
+
+    request.status = status;
+    await request.save();
+
+    res.status(200).json({ success: true, data: request });
+  } catch (error) {
+    next(error);
+  }
+};
+

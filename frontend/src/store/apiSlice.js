@@ -12,7 +12,7 @@ export const quizApiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Quizzes', 'Results', 'Questions'],
+  tagTypes: ['Quizzes', 'Results', 'Questions', 'Reattempts'],
   endpoints: (builder) => ({
     getAvailableQuizzes: builder.query({
       query: () => '/quiz/available',
@@ -45,6 +45,30 @@ export const quizApiSlice = createApi({
     getMyAttempts: builder.query({
       query: () => '/quiz/my-attempts',
       providesTags: ['Results']
+    }),
+    getMyReattempts: builder.query({
+      query: () => '/quiz/my-reattempts',
+      providesTags: ['Reattempts']
+    }),
+    requestReattempt: builder.mutation({
+      query: (data) => ({
+        url: '/quiz/request-reattempt',
+        method: 'POST',
+        body: data
+      }),
+      invalidatesTags: ['Reattempts']
+    }),
+    getAdminReattempts: builder.query({
+      query: () => '/admin/reattempts',
+      providesTags: ['Reattempts']
+    }),
+    updateReattemptStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/admin/reattempts/${id}/status`,
+        method: 'PUT',
+        body: { status }
+      }),
+      invalidatesTags: ['Reattempts', 'Results']
     }),
     updateResultScore: builder.mutation({
       query: ({ resultId, ...data }) => ({
@@ -106,5 +130,9 @@ export const {
   useCreateQuestionMutation,
   useRegisterUserMutation,
   useLoginUserMutation,
-  useUpdateResultScoreMutation
+  useUpdateResultScoreMutation,
+  useGetMyReattemptsQuery,
+  useRequestReattemptMutation,
+  useGetAdminReattemptsQuery,
+  useUpdateReattemptStatusMutation
 } = quizApiSlice;

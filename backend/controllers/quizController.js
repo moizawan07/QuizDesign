@@ -2,11 +2,12 @@ import QuizResult from "../models/QuizResult.js";
 import User from "../models/User.js";
 import Quiz from "../models/Quiz.js";
 import Question from "../models/Question.js";
+import Reattempt from "../models/Reattempt.js";
 
 // Get available quizzes for users to select
 export const getAvailableQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ status: { $ne: "Closed" } }).sort("-createdAt");
+    const quizzes = await Quiz.find().sort("-createdAt");
     
     // Only return quizzes that have at least 1 question
     const validQuizzes = [];
@@ -28,6 +29,7 @@ export const getQuizQuestions = async (req, res) => {
   try {
     const { quizId } = req.params;
     const questions = await Question.find({ quizId });
+    
     // We send back questions including correctAnswer so frontend logic works out-of-the-box
     res.status(200).json({ success: true, questions });
   } catch (error) {
@@ -98,6 +100,37 @@ export const getAllResults = async (req, res) => {
       .sort({ completedAt: -1 });
 
     res.status(200).json({ success: true, results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const requestReattempt = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { quizId, reason } = req.body;
+
+    if (!quizId || !reason) {
+      return res.status(400).json({ success: false, message: "Quiz ID and reason are required." });
+    }
+
+    const existingRequest = await Reattempt.findOne({ userId, quizId });
+    if (existingRequest) {
+      return res.status(400).json({ success: false, message: "You have already submitted a re-attempt request for this quiz." });
+    }
+
+    const newRequest = await Reattempt.create({ userId, quizId, reason });
+    res.status(201).json({ success: true, message: "Re-attempt request submitted.", data: newRequest });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getMyReattempts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const requests = await Reattempt.find({ userId }).sort("-createdAt");
+    res.status(200).json({ success: true, data: requests });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

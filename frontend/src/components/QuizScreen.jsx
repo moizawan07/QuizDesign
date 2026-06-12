@@ -9,7 +9,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [codeAnswers, setCodeAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [tabWarnings, setTabWarnings] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
@@ -21,15 +20,10 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   const timerRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const answersRef = useRef(answers);
-  const codeAnswersRef = useRef(codeAnswers);
 
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
-
-  useEffect(() => {
-    codeAnswersRef.current = codeAnswers;
-  }, [codeAnswers]);
 
   // Initial Fetch
   useEffect(() => {
@@ -67,8 +61,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
           ...q,
           id: q._id,
           question: q.questionText,
-          answer: q.correctAnswer,
-          isLogical: q.isLogical
+          answer: q.correctAnswer
         }));
 
         setQuestions(shuffleArray(mappedQuestions));
@@ -93,7 +86,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     setSubmitted(true); // Ensure it doesn't run again
 
     const finalAnswers = answersRef.current;
-    const finalCodeAnswers = codeAnswersRef.current;
 
     let correct = 0;
     let wrong = 0;
@@ -101,43 +93,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
 
     const detailedAnswers = questions.map(q => {
       const userAns = finalAnswers[q.id] || "";
-      const userCode = finalCodeAnswers[q.id] || "";
-      
-      let isCorrect = null;
-
-      if (q.isLogical) {
-        if (q.testCases && q.testCases.length > 0) {
-          if (!userCode.trim()) {
-            isCorrect = null; // Unattempted logical
-          } else {
-            try {
-              // Create dynamic function from user code
-              const userFunc = new Function(`
-                ${userCode}
-                return ${q.functionName || 'solve'};
-              `)();
-              
-              let passedAll = true;
-              for (let tc of q.testCases) {
-                const args = JSON.parse(`[${tc.input}]`);
-                const expected = JSON.parse(tc.expectedOutput);
-                const result = userFunc(...args);
-                if (JSON.stringify(result) !== JSON.stringify(expected)) {
-                  passedAll = false;
-                  break;
-                }
-              }
-              isCorrect = passedAll;
-            } catch (e) {
-              isCorrect = false; // Code crashed or syntax error
-            }
-          }
-        } else if (q.answer) {
-           isCorrect = userAns ? (userAns === q.answer) : null;
-        }
-      } else {
-         isCorrect = userAns ? (userAns === q.answer) : null;
-      }
+      let isCorrect = userAns ? (userAns === q.answer) : null;
 
       if (isCorrect === true) correct++;
       else if (isCorrect === false) wrong++;
@@ -147,7 +103,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
         questionId: q.id,
         questionText: q.question,
         selectedOption: userAns,
-        userCode: userCode,
         correctAnswer: q.answer,
         isCorrect
       };
@@ -385,128 +340,12 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                     {q.questionCategory && (
                       <span style={{ fontSize: 11, background: 'rgba(59,130,246,0.8)', color: "#fff", fontWeight: 600, padding: "4px 8px", borderRadius: 6, textTransform: "uppercase" }}>{q.questionCategory}</span>
                     )}
-                    {q.isLogical && (
-                      <span style={{ fontSize: 11, background: 'rgba(139,92,246,0.8)', color: "#fff", fontWeight: 600, padding: "4px 8px", borderRadius: 6, textTransform: "uppercase" }}>Logical / Coding</span>
-                    )}
                   </div>
                   <p style={{ fontWeight: 600, fontSize: "clamp(18px, 3vw, 22px)", color: "#fff", lineHeight: 1.6 }}>{q.question}</p>
                 </div>
               </div>
 
               <div style={{ padding: "32px 36px" }}>
-                {q.isLogical && (
-                  <div style={{ marginBottom: q.options && q.options.length > 0 ? 24 : 0 }}>
-                    <div style={{ 
-                      background: "#1e1e1e", 
-                      borderRadius: 12, 
-                      overflow: "hidden", 
-                      boxShadow: "0 16px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.05)",
-                    }}>
-                      {/* VS Code / Mac OS Header */}
-                      <div style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        background: "#252526", 
-                        padding: "0 16px", 
-                        height: 40,
-                      }}>
-                        {/* Mac Window Controls */}
-                        <div style={{ display: "flex", gap: 6, marginRight: 24 }}>
-                          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff5f56" }}></div>
-                          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ffbd2e" }}></div>
-                          <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#27c93f" }}></div>
-                        </div>
-                        {/* Tab */}
-                        <div style={{ 
-                          display: "flex", alignItems: "center", gap: 8, 
-                          background: "#1e1e1e", 
-                          padding: "0 16px", 
-                          height: "100%",
-                          borderTop: "2px solid #3b82f6",
-                          color: "#e2e8f0",
-                          fontSize: 13,
-                          fontFamily: "'Poppins', sans-serif",
-                          fontWeight: 500
-                        }}>
-                          <span style={{ color: "#facc15", fontWeight: 700 }}>JS</span>
-                          solution.js
-                        </div>
-                        <div style={{ flex: 1 }}></div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                           <button style={{ background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)", padding: "4px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Poppins', sans-serif" }}>▶ Run Code</button>
-                        </div>
-                      </div>
-                      
-                      {/* Editor Body */}
-                      <div style={{ position: "relative", display: "flex", minHeight: 250 }}>
-                        {/* Dynamic Line Numbers */}
-                        <div style={{ 
-                          width: 48, 
-                          background: "#1e1e1e", 
-                          padding: "16px 0", 
-                          textAlign: "right", 
-                          color: "#5c6370", 
-                          fontFamily: "'Fira Code', 'Courier New', monospace", 
-                          fontSize: 14, 
-                          lineHeight: 1.6,
-                          userSelect: "none"
-                        }}>
-                          {Array.from({length: Math.max(10, (codeAnswers[q.id]?.split('\n').length || 1))}).map((_, idx) => (
-                            <div key={idx} style={{ paddingRight: 16 }}>{idx + 1}</div>
-                          ))}
-                        </div>
-                        
-                        {/* Textarea */}
-                        <textarea 
-                          value={codeAnswers[q.id] || ""}
-                          onChange={e => setCodeAnswers(p => ({ ...p, [q.id]: e.target.value }))}
-                          placeholder="function solve() {&#10;  // Write your logic here...&#10;}"
-                          style={{
-                            flex: 1, 
-                            minHeight: 250, 
-                            padding: "16px 16px 16px 0", 
-                            background: "#1e1e1e", 
-                            color: "#e5e5e5", 
-                            fontFamily: "'Fira Code', 'Courier New', monospace",
-                            fontSize: 14, 
-                            lineHeight: 1.6, 
-                            border: "none",
-                            outline: "none", 
-                            resize: "vertical",
-                            whiteSpace: "pre"
-                          }}
-                          spellCheck="false"
-                        />
-                      </div>
-
-                      {/* VS Code Status Bar */}
-                      <div style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "space-between", 
-                        background: "#007acc", 
-                        padding: "6px 16px", 
-                        color: "#fff",
-                        fontSize: 11,
-                        fontFamily: "'Poppins', sans-serif",
-                        fontWeight: 500
-                      }}>
-                        <div style={{ display: "flex", gap: 16 }}>
-                          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <svg width="12" height="12" viewBox="0 0 16 16" fill="white"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 5.5l-4 4-2-2L6.5 6l1 1 3-3 1 1.5z"/></svg>
-                            Ready
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", gap: 16, opacity: 0.9 }}>
-                          <span>Ln {(codeAnswers[q.id]?.split('\n').length || 1)}, Col {(codeAnswers[q.id]?.split('\n').pop().length || 0) + 1}</span>
-                          <span>Spaces: 2</span>
-                          <span>UTF-8</span>
-                          <span>JavaScript React</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {q.options && q.options.length > 0 && (
                   <div style={{ marginBottom: 24 }}>
@@ -532,15 +371,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                       );
                     })}
                   </div>
-                )}
-
-                {(q.isLogical && (!q.options || q.options.length === 0)) && (
-                  <button onClick={() => {
-                    if (current < questions.length - 1) setCurrent(c => c + 1);
-                    else handleSubmit();
-                  }} style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all 0.3s" }}>
-                    Save Code & {current < questions.length - 1 ? "Next Question →" : "Submit Quiz"}
-                  </button>
                 )}
               </div>
             </div>

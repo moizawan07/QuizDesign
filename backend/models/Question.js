@@ -19,17 +19,10 @@ const QuestionSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
-    isLogical: {
-      type: Boolean,
-      default: false
-    },
-    testCases: [{
-      input: { type: String }, // JSON parsable string, e.g., "[2, 3]"
-      expectedOutput: { type: String } // JSON parsable string, e.g., "5"
-    }],
+
     difficulty: {
       type: String,
-      enum: ["Easy", "Medium", "Hard", "Logical"],
+      enum: ["Easy", "Medium", "Hard"],
       default: "Medium",
     },
     questionCategory: {

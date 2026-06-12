@@ -58,19 +58,15 @@ const generateFakeData = async () => {
     console.log("Generating 300 Fake Questions...");
     fakeQuizzes.forEach(quiz => {
         for (let i = 0; i < 10; i++) {
-            const isLogical = Math.random() > 0.8; 
-            const options = isLogical ? [] : [`Option A ${i}`, `Option B ${i}`, `Option C ${i}`, `Option D ${i}`];
+            const options = [`Option A ${i}`, `Option B ${i}`, `Option C ${i}`, `Option D ${i}`];
             fakeQuestions.push({
                 _id: new mongoose.Types.ObjectId().toString(),
                 quizId: quiz._id,
-                questionText: isLogical ? `Write a JavaScript function to solve logical problem #${i+1}` : `What is the correct answer for question #${i+1}?`,
+                questionText: `What is the correct answer for question #${i+1}?`,
                 options,
-                correctAnswer: isLogical ? "" : options[randomInt(0, 3)],
-                difficulty: randomArr(["Easy", "Medium", "Hard", "Logical"]),
+                correctAnswer: options[randomInt(0, 3)],
+                difficulty: randomArr(["Easy", "Medium", "Hard"]),
                 questionCategory: quiz.category,
-                isLogical,
-                testCases: isLogical ? [{ input: "1", expectedOutput: "2" }] : [],
-                functionName: isLogical ? "solve" : "",
                 createdAt: quiz.createdAt
             });
         }
@@ -101,18 +97,15 @@ const generateFakeData = async () => {
             const state = randomArr(["correct", "wrong", "unattempted", "correct"]); // Bias towards correct
             let isCorrect = null;
             let selectedOption = "";
-            let userCode = "";
             
             if (state === "correct") {
                 correct++;
                 isCorrect = true;
                 selectedOption = q.correctAnswer;
-                if(q.isLogical) userCode = "function solve(a) {\n  return a * 2;\n}";
             } else if (state === "wrong") {
                 wrong++;
                 isCorrect = false;
                 selectedOption = (q.options && q.options.length) ? (q.options[0] !== q.correctAnswer ? q.options[0] : q.options[1]) : "";
-                if(q.isLogical) userCode = "function solve(a) {\n  // wrong logic\n  return 'wrong';\n}";
             } else {
                 unattempted++;
             }
@@ -121,7 +114,6 @@ const generateFakeData = async () => {
                 questionId: q._id,
                 questionText: q.questionText,
                 selectedOption,
-                userCode,
                 correctAnswer: q.correctAnswer,
                 isCorrect
             };
