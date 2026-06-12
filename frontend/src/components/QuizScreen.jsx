@@ -167,9 +167,9 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [submitted, submitting, handleSubmit, loading, questions.length]);
 
-  // ─── Disable Copy/Paste/Right-Click ────────────────────────────
+  // ─── Disable Copy/Paste/Right-Click ──────────────────────
   useEffect(() => {
-    const block = e => e.preventDefault();
+    const block = (e) => e.preventDefault();
     document.addEventListener("copy", block);
     document.addEventListener("paste", block);
     document.addEventListener("cut", block);
@@ -182,12 +182,12 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     };
   }, []);
 
-  // ─── Timer Effect ─────────────────────────────────────
+  // ─── Timer Effect ─────────────────────────────────────────
   useEffect(() => {
     if (submitted || loading || questions.length === 0) return;
 
     timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
           handleSubmit(false, true);
@@ -234,15 +234,21 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   const answered = Object.keys(answers).length;
   const isUrgent = timeLeft <= 120;
   const progress = ((current + 1) / questions.length) * 100;
+  const isLastQuestion = current === questions.length - 1;
 
   return (
-    <div style={{
-      minHeight: "100vh", width: "100%",
-      fontFamily: "'Poppins', sans-serif",
-      background: "#ffffff",
-      display: "flex", flexDirection: "column",
-      position: "relative", overflow: "hidden",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        fontFamily: "'Poppins', sans-serif",
+        background: "#ffffff",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes fadeUp {
@@ -326,9 +332,22 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       </header>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, position: "relative", zIndex: 10, padding: "40px 150px" }}>
-        <div style={{ margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 400px", gap: 32 }}>
-
+      <main
+        style={{
+          flex: 1,
+          position: "relative",
+          zIndex: 10,
+          padding: "40px 150px",
+        }}
+      >
+        <div
+          style={{
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "1fr 400px",
+            gap: 32,
+          }}
+        >
           {/* ── QUESTION PANEL ── */}
           <div>
             <div key={q.id} style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.06)", animation: "fadeUp 0.4s ease" }}>
@@ -419,7 +438,6 @@ export default function QuizScreen({ user, onSubmitComplete }) {
               </div>
             </div>
           </aside>
-
         </div>
       </main>
     </div>

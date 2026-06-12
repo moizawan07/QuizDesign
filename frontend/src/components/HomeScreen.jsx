@@ -6,12 +6,36 @@ import { logout } from "../store/slices/authSlice";
 import RulesAcknowledgeTour from "./RulesAcknowledgeTour";
 
 const rules = [
-  { icon: "🚫", title: "No AI Tools", desc: "Use of ChatGPT, Claude, or any AI assistant is strictly prohibited." },
-  { icon: "📋", title: "No Copy-Paste", desc: "Copying or pasting text from any external source is disabled." },
-  { icon: "🔒", title: "Stay on Tab", desc: "Switching browser tabs will be detected and recorded as a violation." },
-  { icon: "⏱️", title: `${QUIZ_CONFIG.TIMER_MINUTES}-Minute Limit`, desc: "The quiz auto-submits when the timer runs out." },
-  { icon: "✅", title: "1 Mark Per Question", desc: "Each correct answer carries 1 mark. No negative marking." },
-  { icon: "📵", title: "No External Help", desc: "No textbooks, notes, or peer assistance allowed during the quiz." },
+  {
+    icon: "🚫",
+    title: "No AI Tools",
+    desc: "Use of ChatGPT, Claude, or any AI assistant is strictly prohibited.",
+  },
+  {
+    icon: "📋",
+    title: "No Copy-Paste",
+    desc: "Copying or pasting text from any external source is disabled.",
+  },
+  {
+    icon: "🔒",
+    title: "Stay on Tab",
+    desc: "Switching browser tabs will be detected and recorded as a violation.",
+  },
+  {
+    icon: "⏱️",
+    title: `${QUIZ_CONFIG.TIMER_MINUTES}-Minute Limit`,
+    desc: "The quiz auto-submits when the timer runs out.",
+  },
+  {
+    icon: "✅",
+    title: "1 Mark Per Question",
+    desc: "Each correct answer carries 1 mark. No negative marking.",
+  },
+  {
+    icon: "📵",
+    title: "No External Help",
+    desc: "No textbooks, notes, or peer assistance allowed during the quiz.",
+  },
 ];
 
 export default function HomeScreen({ onStart, user }) {
@@ -118,13 +142,17 @@ export default function HomeScreen({ onStart, user }) {
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap";
     document.head.appendChild(link);
     const t1 = setTimeout(() => setMounted(true), 80);
     rules.forEach((_, i) => {
-      setTimeout(() => setShown(p => [...p, i]), 400 + i * 100);
+      setTimeout(() => setShown((p) => [...p, i]), 400 + i * 100);
     });
-    return () => { clearTimeout(t1); document.head.removeChild(link); };
+    return () => {
+      clearTimeout(t1);
+      document.head.removeChild(link);
+    };
   }, []);
 
   return (
@@ -162,7 +190,7 @@ export default function HomeScreen({ onStart, user }) {
         }
         @keyframes pulseDot {
           0%, 100% { opacity: 1; transform: scale(1); }
-          50%       { opacity: 0.35; transform: scale(0.65); }
+          50%       { opacity: 0.35; transform: scale(0.45); }
         }
         @keyframes glowPulse {
           0%, 100% { box-shadow: 0 4px 18px rgba(16,185,129,0.3); }
@@ -171,7 +199,7 @@ export default function HomeScreen({ onStart, user }) {
  
         .rule-card {
           opacity: 0;
-          transform: translateY(14px);
+          // transform: translateY(14px);
           transition: opacity 0.45s ease, transform 0.45s ease, border-color 0.2s, background 0.2s, box-shadow 0.2s;
         }
         .rule-card.vis { opacity: 1; transform: translateY(0); }
@@ -403,6 +431,18 @@ export default function HomeScreen({ onStart, user }) {
                     <h3 style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", margin: 0 }}>Assessment Module</h3>
                     <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>Select your assigned quiz</div>
                   </div>
+                  <div
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      background: "#10b981",
+                      boxShadow: "0 0 8px rgba(16,185,129,0.5)",
+                      animation: "pulseDot 2s ease-in-out infinite",
+                      animationDelay: `${i * 0.3}s`,
+                    }}
+                  />
                 </div>
 
                 <select

@@ -50,8 +50,8 @@ export default function ResultsTablePage() {
           </p>
         </div>
 
-             {/* BACK BUTTON */}
-        <button
+          {/* BACK BUTTON */}
+          <button
           onClick={() => navigate("/")}
           style={{
             padding: "12px 18px",
@@ -65,7 +65,7 @@ export default function ResultsTablePage() {
           }}
         >
           ← Back
-        </button>
+          </button>
 
            </div>
 
@@ -143,6 +143,7 @@ export default function ResultsTablePage() {
                     }}
                   >
                     {[
+                      "Id",
                       "Name",
                       "Email",
                       "Correct",
@@ -186,7 +187,8 @@ export default function ResultsTablePage() {
                           i % 2 === 0 ? "#ffffff" : "#f8fafc";
                       }}
                     >
-                      <td style={cellBold}>{r.userId?.name || "N/A"}</td>
+                      <td style={cellBold}>{"#" + r.userId?.idNo || "N/A"}</td>
+                      <td style={cell}>{r.userId?.name || "N/A"}</td>
 
                       <td style={cell}>{r.userId?.email}</td>
 
@@ -246,7 +248,7 @@ export default function ResultsTablePage() {
                       <td style={cell}>
                         <div
                           style={{
-                            background: "#f8fafc",
+                            background: "#DCF2ED",
                             padding: "8px 10px",
                             borderRadius: 10,
                             fontSize: 12,
