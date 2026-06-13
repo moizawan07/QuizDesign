@@ -74,7 +74,7 @@ export const updateQuizStatus = async (req, res, next) => {
 // --- QUESTIONS ---
 export const createQuestion = async (req, res, next) => {
   try {
-    const { quizId, questionText, options, correctAnswer, difficulty, questionCategory } = req.body;
+    const { quizId, questionText, type, starterCode, options, correctAnswer, difficulty, questionCategory } = req.body;
     
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
@@ -88,13 +88,17 @@ export const createQuestion = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Quiz ID, Question Text and Category are required" });
     }
 
-    if (!options || options.length < 2 || !correctAnswer) {
-      return res.status(400).json({ success: false, message: "For regular MCQ questions, at least two options and a correct answer are required" });
+    if (type !== "logical") {
+      if (!options || options.length < 2 || !correctAnswer) {
+        return res.status(400).json({ success: false, message: "For regular MCQ questions, at least two options and a correct answer are required" });
+      }
     }
 
     const question = await Question.create({
       quizId,
       questionText,
+      type: type || "theoretical",
+      starterCode: starterCode || "",
       options: options || [],
       correctAnswer: correctAnswer || "",
       difficulty: difficulty || "Medium",
@@ -131,6 +135,46 @@ export const getAllResults = async (req, res, next) => {
       data: results,
       pagination: { total, page, pages: Math.ceil(total / limit) }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateResultScore = async (req, res, next) => {
+  try {
+    const { resultId } = req.params;
+    const { questionId, isCorrect } = req.body;
+
+    const result = await QuizResult.findById(resultId);
+    if (!result) return res.status(404).json({ success: false, message: "Result not found" });
+
+    let correctCount = 0;
+    let wrongCount = 0;
+    let unattemptedCount = 0;
+
+    result.detailedAnswers.forEach(ans => {
+      // Update the specific question's correctness
+      if (ans.questionId.toString() === questionId.toString()) {
+        ans.isCorrect = isCorrect;
+      }
+
+      // Tally the counts
+      if (ans.isCorrect === true) correctCount++;
+      else if (ans.isCorrect === false) wrongCount++;
+      else unattemptedCount++;
+    });
+
+    result.correct = correctCount;
+    result.wrong = wrongCount;
+    result.unattempted = unattemptedCount;
+    
+    // Total scorable questions are the total minus the logical questions that haven't been graded yet
+    // Actually, it's simpler: total scorable is just the total questions (both MCQ and Logical).
+    // The percentage is based on the TOTAL number of questions in the quiz.
+    result.percentage = Math.round((correctCount / result.total) * 100);
+
+    await result.save();
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

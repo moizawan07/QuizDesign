@@ -48,6 +48,8 @@ export default function AdminPage() {
   const [quizQuestions, setQuizQuestions] = useState([]); // Questions for the currently editing quiz
 
   const [questionData, setQuestionData] = useState({
+    type: "theoretical",
+    starterCode: "",
     questionText: "",
     options: ["", "", "", ""],
     correctAnswer: "",
@@ -97,6 +99,17 @@ export default function AdminPage() {
       setError("Failed to fetch data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGradeLogical = async (resultId, questionId, isCorrect) => {
+    try {
+      const res = await api.put(`/admin/results/${resultId}/grade`, { questionId, isCorrect });
+      setViewingResult(res.data.data);
+      fetchData(); // Refresh list silently so dashboard numbers stay up to date
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update grade. Please try again.");
     }
   };
 
@@ -202,18 +215,20 @@ export default function AdminPage() {
 
     if (!questionData.questionText) return;
 
-    const filteredOptions = questionData.options.filter(o => o.trim() !== "");
-
-    if (!questionData.correctAnswer) return;
-    if (filteredOptions.length < 2) {
-      setError("Please provide at least two valid options.");
-      setTimeout(() => setError(""), 3000);
-      return;
-    }
-    if (!filteredOptions.includes(questionData.correctAnswer)) {
-      setError("Correct answer must match one of the options exactly.");
-      setTimeout(() => setError(""), 3000);
-      return;
+    let filteredOptions = [];
+    if (questionData.type === "theoretical") {
+      filteredOptions = questionData.options.filter(o => o.trim() !== "");
+      if (!questionData.correctAnswer) return;
+      if (filteredOptions.length < 2) {
+        setError("Please provide at least two valid options.");
+        setTimeout(() => setError(""), 3000);
+        return;
+      }
+      if (!filteredOptions.includes(questionData.correctAnswer)) {
+        setError("Correct answer must match one of the options exactly.");
+        setTimeout(() => setError(""), 3000);
+        return;
+      }
     }
 
     try {
@@ -224,6 +239,8 @@ export default function AdminPage() {
         options: filteredOptions
       });
       setQuestionData({
+        type: "theoretical",
+        starterCode: "",
         questionText: "",
         options: ["", "", "", ""],
         correctAnswer: "",
@@ -494,23 +511,53 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 32, marginBottom: 32, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 32, borderBottom: "1px solid #e2e8f0", paddingBottom: 32 }}>
-                  <div>
-                    <div style={labelStyle}>Student Name</div>
-                    <div style={{ fontSize: 18, fontWeight: 600, color: "#0f172a" }}>{viewingResult.userId?.name || "Unknown"}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>Quiz Name</div>
-                    <div style={{ fontSize: 18, fontWeight: 600, color: "#0f172a" }}>{viewingResult.quizId?.title || "Unknown"}</div>
-                  </div>
-                  <div>
-                    <div style={labelStyle}>Final Score</div>
-                    <div style={{ fontSize: 18, fontWeight: 600, color: viewingResult.percentage >= 50 ? "#16a34a" : "#dc2626" }}>
-                      {viewingResult.percentage}% <span style={{ fontSize: 14, color: "#64748b", fontWeight: 400 }}>({viewingResult.correct} / {viewingResult.total})</span>
+              {(() => {
+                const mcqAnswers = viewingResult.detailedAnswers?.filter(a => a.type !== 'logical') || [];
+                const logicalAnswers = viewingResult.detailedAnswers?.filter(a => a.type === 'logical') || [];
+                const mcqCorrect = mcqAnswers.filter(a => a.isCorrect === true).length;
+                const mcqWrong = mcqAnswers.filter(a => a.isCorrect === false).length;
+                const logicalCorrect = logicalAnswers.filter(a => a.isCorrect === true).length;
+                const logicalWrong = logicalAnswers.filter(a => a.isCorrect === false).length;
+
+                return (
+                  <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 32, marginBottom: 32, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, marginBottom: 32, borderBottom: "1px solid #e2e8f0", paddingBottom: 32 }}>
+                      <div>
+                        <div style={labelStyle}>Student Name</div>
+                        <div style={{ fontSize: 18, fontWeight: 600, color: "#0f172a" }}>{viewingResult.userId?.name || "Unknown"}</div>
+                      </div>
+                      <div>
+                        <div style={labelStyle}>Quiz Name</div>
+                        <div style={{ fontSize: 18, fontWeight: 600, color: "#0f172a" }}>{viewingResult.quizId?.title || "Unknown"}</div>
+                      </div>
+                      <div>
+                        <div style={labelStyle}>Total Questions</div>
+                        <div style={{ fontSize: 18, fontWeight: 600, color: "#0f172a" }}>
+                          {viewingResult.total} <span style={{ fontSize: 13, color: "#10b981", fontWeight: 600 }}>(Base for result)</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={labelStyle}>Overall Score</div>
+                        <div style={{ fontSize: 18, fontWeight: 600, color: viewingResult.percentage >= 50 ? "#16a34a" : "#dc2626" }}>
+                          {viewingResult.percentage}% <span style={{ fontSize: 14, color: "#64748b", fontWeight: 400 }}>({viewingResult.correct} / {viewingResult.total})</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24, marginBottom: 32, background: "#f8fafc", padding: 20, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                      <div>
+                        <div style={labelStyle}>Theoretical (MCQ) Breakdown</div>
+                        <div style={{ fontSize: 15, fontWeight: 500, color: "#475569" }}>
+                          <span style={{ color: "#16a34a", fontWeight: 700 }}>{mcqCorrect}</span> Correct &bull; <span style={{ color: "#dc2626", fontWeight: 700 }}>{mcqWrong}</span> Wrong
+                        </div>
+                      </div>
+                      <div>
+                        <div style={labelStyle}>Logical (Coding) Breakdown</div>
+                        <div style={{ fontSize: 15, fontWeight: 500, color: "#475569" }}>
+                          <span style={{ color: "#16a34a", fontWeight: 700 }}>{logicalCorrect}</span> Correct &bull; <span style={{ color: "#dc2626", fontWeight: 700 }}>{logicalWrong}</span> Wrong
+                        </div>
+                      </div>
+                    </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 32, background: "#f8fafc", padding: 20, borderRadius: 8, border: "1px solid #e2e8f0" }}>
                   <div>
@@ -537,23 +584,79 @@ export default function AdminPage() {
                 {viewingResult.detailedAnswers && viewingResult.detailedAnswers.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {viewingResult.detailedAnswers.map((ans, idx) => {
-                      const isCorrect = ans.isCorrect === true;
-                      const isWrong = ans.isCorrect === false;
-                      return (
-                        <div key={idx} style={{ padding: 20, borderRadius: 8, background: "#fff", border: `1px solid ${isCorrect ? '#bbf7d0' : (isWrong ? '#fecaca' : '#e2e8f0')}`, borderLeft: `4px solid ${isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : '#cbd5e1')}` }}>
-                          <div style={{ fontSize: 15, fontWeight: 500, color: "#0f172a", marginBottom: 12 }}>{idx + 1}. {ans.questionText}</div>
-                          <div style={{ display: "flex", gap: 32, fontSize: 14 }}>
-                            <div style={{ color: isCorrect ? "#16a34a" : "#dc2626" }}>
-                              <span style={{ fontWeight: 600 }}>Student Selected:</span> {ans.selectedOption || "Not Answered"}
+                      if (ans.type === "logical") {
+                        const isGraded = ans.isCorrect !== null;
+                        const isCorrect = ans.isCorrect === true;
+                        const isWrong = ans.isCorrect === false;
+
+                        return (
+                          <div key={idx} style={{ padding: 20, borderRadius: 8, background: "#f8fafc", border: `1px solid ${isGraded ? (isCorrect ? '#bbf7d0' : '#fecaca') : '#e2e8f0'}`, borderLeft: `4px solid ${isGraded ? (isCorrect ? '#22c55e' : '#ef4444') : '#3b82f6'}` }}>
+                            <div style={{ fontSize: 15, fontWeight: 500, color: "#0f172a", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                              <span>{idx + 1}. {ans.questionText}</span>
+                              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                                {isGraded && (
+                                  <span style={{ fontSize: 12, fontWeight: 600, color: isCorrect ? "#16a34a" : "#dc2626" }}>
+                                    {isCorrect ? "Marked Correct" : "Marked Wrong"}
+                                  </span>
+                                )}
+                                <span style={{ fontSize: 12, color: "#0284c7", background: "#e0f2fe", padding: "4px 8px", borderRadius: 6, fontWeight: 600, flexShrink: 0 }}>Logical (Coding)</span>
+                              </div>
                             </div>
-                            {ans.correctAnswer && (
-                              <div style={{ color: "#16a34a" }}>
-                                <span style={{ fontWeight: 600 }}>Correct Answer:</span> {ans.correctAnswer}
+                            <div style={{ fontSize: 14 }}>
+                              <div style={{ fontWeight: 600, marginBottom: 8, color: "#475569" }}>Submitted Code:</div>
+                              <pre style={{ background: "#1e293b", color: "#f8fafc", padding: 16, borderRadius: 8, overflowX: "auto", fontFamily: "monospace", margin: 0, fontSize: 13, whiteSpace: "pre-wrap" }}>
+                                {ans.submittedCode || "No code submitted"}
+                              </pre>
+                            </div>
+                            
+                            {!isGraded ? (
+                              <div style={{ display: "flex", gap: 12, marginTop: 16, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+                                <button onClick={() => handleGradeLogical(viewingResult._id, ans.questionId, true)} style={{ background: "#fff", color: "#10b981", border: "1px solid #10b981", padding: "6px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} onMouseOver={(e) => { e.target.style.background = "#10b981"; e.target.style.color = "#fff"; }} onMouseOut={(e) => { e.target.style.background = "#fff"; e.target.style.color = "#10b981"; }}>
+                                  ✓ Mark Correct
+                                </button>
+                                <button onClick={() => handleGradeLogical(viewingResult._id, ans.questionId, false)} style={{ background: "#fff", color: "#ef4444", border: "1px solid #ef4444", padding: "6px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} onMouseOver={(e) => { e.target.style.background = "#ef4444"; e.target.style.color = "#fff"; }} onMouseOut={(e) => { e.target.style.background = "#fff"; e.target.style.color = "#ef4444"; }}>
+                                  ✕ Mark Wrong
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: isCorrect ? "#16a34a" : "#dc2626" }}>
+                                  {isCorrect ? "✅ This answer was marked as Correct" : "❌ This answer was marked as Wrong"}
+                                </div>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  {isCorrect ? (
+                                    <button onClick={() => handleGradeLogical(viewingResult._id, ans.questionId, false)} style={{ background: "transparent", color: "#ef4444", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>
+                                      Change to Wrong
+                                    </button>
+                                  ) : (
+                                    <button onClick={() => handleGradeLogical(viewingResult._id, ans.questionId, true)} style={{ background: "transparent", color: "#10b981", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>
+                                      Change to Correct
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
-                        </div>
-                      )
+                        )
+                      } else {
+                        const isCorrect = ans.isCorrect === true;
+                        const isWrong = ans.isCorrect === false;
+                        return (
+                          <div key={idx} style={{ padding: 20, borderRadius: 8, background: "#fff", border: `1px solid ${isCorrect ? '#bbf7d0' : (isWrong ? '#fecaca' : '#e2e8f0')}`, borderLeft: `4px solid ${isCorrect ? '#22c55e' : (isWrong ? '#ef4444' : '#cbd5e1')}` }}>
+                            <div style={{ fontSize: 15, fontWeight: 500, color: "#0f172a", marginBottom: 12 }}>{idx + 1}. {ans.questionText}</div>
+                            <div style={{ display: "flex", gap: 32, fontSize: 14 }}>
+                              <div style={{ color: isCorrect ? "#16a34a" : "#dc2626" }}>
+                                <span style={{ fontWeight: 600 }}>Student Selected:</span> {ans.selectedOption || "Not Answered"}
+                              </div>
+                              {ans.correctAnswer && (
+                                <div style={{ color: "#16a34a" }}>
+                                  <span style={{ fontWeight: 600 }}>Correct Answer:</span> {ans.correctAnswer}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      }
                     })}
                   </div>
                 ) : (
@@ -562,6 +665,8 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
+            );
+          })()}
             </div>
           )}
 
@@ -712,7 +817,14 @@ export default function AdminPage() {
                     ) : (
                       <form onSubmit={handleAddQuestion} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                          <div>
+                            <label style={labelStyle}>Question Type</label>
+                            <select value={questionData.type} onChange={e => setQuestionData({ ...questionData, type: e.target.value })} style={inputStyle} required>
+                              <option value="theoretical">Theoretical (MCQ)</option>
+                              <option value="logical">Logical (Coding)</option>
+                            </select>
+                          </div>
                           <div>
                             <label style={labelStyle}>Difficulty</label>
                             <select value={questionData.difficulty} onChange={e => setQuestionData({ ...questionData, difficulty: e.target.value })} style={inputStyle} required>
@@ -738,25 +850,39 @@ export default function AdminPage() {
                           />
                         </div>
 
-                        <div>
-                          <label style={labelStyle}>Multiple Choice Options</label>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                            {questionData.options.map((opt, idx) => (
+                        {questionData.type === "theoretical" ? (
+                          <>
+                            <div>
+                              <label style={labelStyle}>Multiple Choice Options</label>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                {questionData.options.map((opt, idx) => (
+                                  <input
+                                    key={idx} type="text" value={opt} onChange={e => handleOptionChange(idx, e.target.value)}
+                                    style={inputStyle} placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+    
+                            <div>
+                              <label style={labelStyle}>Valid Correct Answer</label>
                               <input
-                                key={idx} type="text" value={opt} onChange={e => handleOptionChange(idx, e.target.value)}
-                                style={inputStyle} placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                                type="text" value={questionData.correctAnswer} onChange={e => setQuestionData({ ...questionData, correctAnswer: e.target.value })}
+                                style={inputStyle} placeholder="Must identically match one of the options above" required={questionData.type === 'theoretical'}
                               />
-                            ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div>
+                            <label style={labelStyle}>Starter Code (Optional)</label>
+                            <textarea
+                              value={questionData.starterCode}
+                              onChange={e => setQuestionData({ ...questionData, starterCode: e.target.value })}
+                              style={{ ...inputStyle, minHeight: 120, fontFamily: "monospace", resize: "vertical", background: "#1e293b", color: "#f8fafc" }}
+                              placeholder="// Write any base code here..."
+                            />
                           </div>
-                        </div>
-
-                        <div>
-                          <label style={labelStyle}>Valid Correct Answer</label>
-                          <input
-                            type="text" value={questionData.correctAnswer} onChange={e => setQuestionData({ ...questionData, correctAnswer: e.target.value })}
-                            style={inputStyle} placeholder="Must identically match one of the options above" required
-                          />
-                        </div>
+                        )}
 
                         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                           <button type="submit" className="btn-primary" disabled={loading}>
@@ -786,9 +912,15 @@ export default function AdminPage() {
                               {idx + 1}. {q.questionText}
                             </div>
                             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                              <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 500, background: "#f0fdf4", padding: "2px 8px", borderRadius: 4, border: "1px solid #bbf7d0" }}>
-                                Ans: {q.correctAnswer}
-                              </span>
+                              {q.type === "logical" ? (
+                                <span style={{ fontSize: 12, color: "#0284c7", fontWeight: 500, background: "#e0f2fe", padding: "2px 8px", borderRadius: 4, border: "1px solid #bae6fd" }}>
+                                  Logical (Coding)
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 500, background: "#f0fdf4", padding: "2px 8px", borderRadius: 4, border: "1px solid #bbf7d0" }}>
+                                  Ans: {q.correctAnswer}
+                                </span>
+                              )}
                               <span style={{ fontSize: 12, color: "#475569", fontWeight: 500, background: "#e2e8f0", padding: "2px 8px", borderRadius: 4 }}>
                                 {q.difficulty}
                               </span>

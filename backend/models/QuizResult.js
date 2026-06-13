@@ -21,11 +21,15 @@ const QuizResultSchema = new mongoose.Schema(
     timeTaken: { type: Number, default: 0 },
     tabViolations: { type: Number, default: 0 },
     note: { type: String, default: "Manual submit" },
+    logicalTotal: { type: Number, default: 0 },
+    logicalAttempted: { type: Number, default: 0 },
     detailedAnswers: [
       {
         questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
         questionText: String,
+        type: { type: String, default: "theoretical" },
         selectedOption: String,
+        submittedCode: String,
         correctAnswer: String,
         isCorrect: Boolean,
       }

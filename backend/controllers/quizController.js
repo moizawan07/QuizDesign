@@ -76,7 +76,11 @@ export const getMyAttempts = async (req, res) => {
 export const submitQuiz = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { quizId, correct, wrong, unattempted, total, percentage, completedAt, timeTaken, detailedAnswers, tabViolations, note } = req.body;
+    const { 
+      quizId, correct, wrong, unattempted, total, percentage, 
+      completedAt, timeTaken, detailedAnswers, tabViolations, note,
+      logicalTotal, logicalAttempted
+    } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -111,6 +115,8 @@ export const submitQuiz = async (req, res) => {
       timeTaken,
       tabViolations: tabViolations || 0,
       note: note || "Manual submit",
+      logicalTotal: logicalTotal || 0,
+      logicalAttempted: logicalAttempted || 0,
       detailedAnswers: detailedAnswers || []
     });
 
