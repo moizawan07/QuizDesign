@@ -12,9 +12,6 @@ const QuizResultSchema = new mongoose.Schema(
       ref: "Quiz",
       required: [true, "Quiz ID is required"],
     },
-    correct: { type: Number, default: 0 },
-    wrong: { type: Number, default: 0 },
-    unattempted: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
     percentage: { type: Number, default: 0 },
     completedAt: { type: Date, default: Date.now },
@@ -23,8 +20,16 @@ const QuizResultSchema = new mongoose.Schema(
     tabViolations: { type: Number, default: 0 },
     isInvalidated: { type: Boolean, default: false },
     note: { type: String, default: "Manual submit" },
+    theoryTotal: { type: Number, default: 0 },
+    theoryCorrect: { type: Number, default: 0 },
+    theoryWrong: { type: Number, default: 0 },
+    theoryUnattempted: { type: Number, default: 0 },
     logicalTotal: { type: Number, default: 0 },
     logicalAttempted: { type: Number, default: 0 },
+    logicalUnattempted: { type: Number, default: 0 },
+    logicalScore: { type: Number, default: 0 }, // Score out of logicalTotal
+    isGraded: { type: Boolean, default: false }, // True once admin grades logical questions
+    overallPercentage: { type: Number, default: 0 },
     detailedAnswers: [
       {
         questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },

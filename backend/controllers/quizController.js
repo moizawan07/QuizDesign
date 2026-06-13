@@ -40,6 +40,26 @@ export const getAvailableQuizzes = async (req, res) => {
 export const getQuizQuestions = async (req, res) => {
   try {
     const { quizId } = req.params;
+    const userId = req.user.id;
+
+    // Check if the quiz exists and is active
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Forbidden: Quiz not found." });
+    }
+    if (quiz.status !== "Open") {
+      return res.status(403).json({ success: false, message: "Forbidden: This quiz is currently closed." });
+    }
+
+    // Check if the user has already attempted THIS specific quiz
+    const existingAttempts = await QuizResult.find({ userId, quizId });
+    if (existingAttempts.length >= 1) {
+      const approvedReattempt = await Reattempt.findOne({ userId, quizId, status: "Approved" });
+      if (!approvedReattempt) {
+        return res.status(403).json({ success: false, message: "Forbidden: You have already attempted this specific quiz." });
+      }
+    }
+
     const questions = await Question.find({ quizId });
     
     // We send back questions including correctAnswer so frontend logic works out-of-the-box
@@ -76,7 +96,7 @@ export const getMyAttempts = async (req, res) => {
 export const submitQuiz = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { quizId, correct, wrong, unattempted, total, percentage, completedAt, timeTaken, bonusTimeUsed, detailedAnswers, tabViolations, note } = req.body;
+    const { quizId, total, percentage, theoryTotal, theoryCorrect, theoryWrong, theoryUnattempted, logicalTotal, logicalAttempted, logicalUnattempted, completedAt, timeTaken, bonusTimeUsed, detailedAnswers, tabViolations, note } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -99,25 +119,33 @@ export const submitQuiz = async (req, res) => {
       await approvedReattempt.save();
     }
 
-    if (!quizId || correct === undefined || wrong === undefined || unattempted === undefined || total === undefined) {
+    if (!quizId || total === undefined) {
       return res.status(400).json({ success: false, message: "Please provide all required quiz data" });
     }
+
+    // Initially overallPercentage is just theory percentage, but it will be updated when graded
+    const overallPercentage = percentage; 
 
     const quizResult = await QuizResult.create({
       userId,
       quizId,
-      correct,
-      wrong,
-      unattempted,
       total,
       percentage,
+      theoryTotal: theoryTotal || 0,
+      theoryCorrect: theoryCorrect || 0,
+      theoryWrong: theoryWrong || 0,
+      theoryUnattempted: theoryUnattempted || 0,
+      logicalTotal: logicalTotal || 0,
+      logicalAttempted: logicalAttempted || 0,
+      logicalUnattempted: logicalUnattempted || 0,
+      logicalScore: 0,
+      isGraded: logicalTotal === 0, // Automatically graded if no logical questions
+      overallPercentage,
       completedAt,
       timeTaken,
       bonusTimeUsed: bonusTimeUsed || 0,
       tabViolations: tabViolations || 0,
       note: note || "Manual submit",
-      logicalTotal: logicalTotal || 0,
-      logicalAttempted: logicalAttempted || 0,
       detailedAnswers: detailedAnswers || []
     });
 
