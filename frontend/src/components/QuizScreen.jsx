@@ -16,6 +16,7 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [fetchError, setFetchError] = useState("");
+  const [usedBonusPoints, setUsedBonusPoints] = useState([false, false, false]);
 
   const timerRef = useRef(null);
   const isSubmittingRef = useRef(false);
@@ -236,6 +237,14 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   const progress = ((current + 1) / questions.length) * 100;
   const isLastQuestion = current === questions.length - 1;
 
+  const handleBonusPoint = (index, minutes) => {
+    if (usedBonusPoints[index] || !minutes) return;
+    setTimeLeft(prev => prev + (minutes * 60));
+    const newUsed = [...usedBonusPoints];
+    newUsed[index] = true;
+    setUsedBonusPoints(newUsed);
+  };
+
   return (
     <div
       style={{
@@ -409,6 +418,36 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                   ))}
                 </div>
               </div>
+
+              {quizDetails?.bonusPoints && quizDetails.bonusPoints.some(min => min > 0) && (
+                <div style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontWeight: 700, fontSize: 13, color: "#f59e0b", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.15em" }}>Bonus Time</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {quizDetails.bonusPoints.map((minutes, idx) => {
+                      if (!minutes || minutes <= 0) return null;
+                      const isUsed = usedBonusPoints[idx];
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleBonusPoint(idx, minutes)}
+                          disabled={isUsed}
+                          style={{
+                            width: "100%", padding: "10px", borderRadius: 8,
+                            border: isUsed ? "1px dashed #cbd5e1" : "1px solid #fcd34d",
+                            background: isUsed ? "#f8fafc" : "linear-gradient(135deg, #f59e0b, #d97706)",
+                            color: isUsed ? "#94a3b8" : "#fff",
+                            fontWeight: 600, fontSize: 13, cursor: isUsed ? "not-allowed" : "pointer",
+                            transition: "all 0.2s", display: "flex", justifyContent: "space-between", alignItems: "center"
+                          }}
+                        >
+                          <span>Bonus #{idx + 1}</span>
+                          <span>{isUsed ? "Used" : `+${minutes} Min`}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div style={{ marginBottom: 20 }}>
                 <h3 style={{ fontWeight: 700, fontSize: 11, color: "#64748b", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.15em" }}>Question Guide</h3>

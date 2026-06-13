@@ -30,6 +30,10 @@ const QuizSchema = new mongoose.Schema(
       required: [true, "Time limit in minutes is required"],
       min: 1,
     },
+    bonusPoints: {
+      type: [Number],
+      default: [0, 0, 0]
+    },
     status: {
       type: String,
       enum: ["Open", "Closed"],

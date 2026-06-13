@@ -120,13 +120,23 @@ export default function AdminPage() {
           head: editingQuiz.head,
           category: editingQuiz.category,
           title: editingQuiz.title,
-          timeLimit: editingQuiz.timeLimit || 5
+          timeLimit: editingQuiz.timeLimit || 5,
+          bonusPoints: editingQuiz.bonusPoints || [0, 0, 0]
         });
         setEditingQuiz(res.data.data);
         setSuccess("Quiz created! Now add questions below.");
         fetchData();
       } else {
+        const res = await api.put(`/admin/quizzes/${editingQuiz._id}`, {
+          head: editingQuiz.head,
+          category: editingQuiz.category,
+          title: editingQuiz.title,
+          timeLimit: editingQuiz.timeLimit || 5,
+          bonusPoints: editingQuiz.bonusPoints || [0, 0, 0]
+        });
+        setEditingQuiz(res.data.data);
         setSuccess("Quiz settings updated!");
+        fetchData();
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to save quiz");
@@ -249,7 +259,7 @@ export default function AdminPage() {
   };
 
   const openBuilderForNew = () => {
-    setEditingQuiz({ head: "", category: "", title: "", timeLimit: 5 });
+    setEditingQuiz({ head: "", category: "", title: "", timeLimit: 5, bonusPoints: [0, 0, 0] });
     setQuizQuestions([]);
   };
 
@@ -688,6 +698,32 @@ export default function AdminPage() {
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>Time Limit (Minutes)</label>
                     <input type="number" min="1" value={editingQuiz.timeLimit || 5} onChange={e => setEditingQuiz({ ...editingQuiz, timeLimit: parseInt(e.target.value) })} style={{ ...inputStyle, maxWidth: "200px" }} required />
+                  </div>
+                  <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Bonus Point 1 (Minutes)</label>
+                      <input type="number" min="0" value={(editingQuiz.bonusPoints && editingQuiz.bonusPoints[0]) || 0} onChange={e => {
+                        const newBonus = [...(editingQuiz.bonusPoints || [0,0,0])];
+                        newBonus[0] = parseInt(e.target.value) || 0;
+                        setEditingQuiz({ ...editingQuiz, bonusPoints: newBonus });
+                      }} style={inputStyle} required />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Bonus Point 2 (Minutes)</label>
+                      <input type="number" min="0" value={(editingQuiz.bonusPoints && editingQuiz.bonusPoints[1]) || 0} onChange={e => {
+                        const newBonus = [...(editingQuiz.bonusPoints || [0,0,0])];
+                        newBonus[1] = parseInt(e.target.value) || 0;
+                        setEditingQuiz({ ...editingQuiz, bonusPoints: newBonus });
+                      }} style={inputStyle} required />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Bonus Point 3 (Minutes)</label>
+                      <input type="number" min="0" value={(editingQuiz.bonusPoints && editingQuiz.bonusPoints[2]) || 0} onChange={e => {
+                        const newBonus = [...(editingQuiz.bonusPoints || [0,0,0])];
+                        newBonus[2] = parseInt(e.target.value) || 0;
+                        setEditingQuiz({ ...editingQuiz, bonusPoints: newBonus });
+                      }} style={inputStyle} required />
+                    </div>
                   </div>
                   <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
                     <button type="submit" className="btn-primary" disabled={loading}>

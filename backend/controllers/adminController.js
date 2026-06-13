@@ -8,7 +8,7 @@ import Role from "../models/Role.js";
 // --- QUIZZES ---
 export const createQuiz = async (req, res, next) => {
   try {
-    const { head, category, title, timeLimit } = req.body;
+    const { head, category, title, timeLimit, bonusPoints } = req.body;
     if (!head || !category || !title || !timeLimit) {
       return res.status(400).json({ success: false, message: "Head, category, title, and time limit are required" });
     }
@@ -17,10 +17,36 @@ export const createQuiz = async (req, res, next) => {
       category,
       title,
       timeLimit,
+      bonusPoints: bonusPoints || [0, 0, 0],
       stack: "General", // Keeping for backward compatibility if needed, or remove
       numberOfQuestions: 0 // Will be derived from actual questions
     });
     res.status(201).json({ success: true, data: quiz });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateQuiz = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { head, category, title, timeLimit, bonusPoints } = req.body;
+    
+    if (!head || !category || !title || !timeLimit) {
+      return res.status(400).json({ success: false, message: "Head, category, title, and time limit are required" });
+    }
+
+    const quiz = await Quiz.findByIdAndUpdate(
+      id,
+      { head, category, title, timeLimit, bonusPoints: bonusPoints || [0, 0, 0] },
+      { new: true, runValidators: true }
+    );
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    res.status(200).json({ success: true, data: quiz });
   } catch (error) {
     next(error);
   }
