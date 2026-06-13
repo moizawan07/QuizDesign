@@ -12,7 +12,8 @@ import {
   getAllUsers,
   deleteUser,
   deleteQuiz,
-  deleteReattempt
+  deleteReattempt,
+  updateResultScore
 } from "../controllers/adminController.js";
 import { protect, isAdmin } from "../middleware/auth.js";
 
@@ -29,6 +30,7 @@ router.route("/questions/:quizId").get(protect, isAdmin, getQuestionsForQuiz);
 
 // Results
 router.route("/results").get(protect, isAdmin, getAllResults);
+router.route("/results/:resultId/grade").put(protect, isAdmin, updateResultScore);
 
 // Reattempts
 router.route("/reattempts").get(protect, isAdmin, getAllReattempts);

@@ -19,6 +19,15 @@ const QuestionSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    type: {
+      type: String,
+      enum: ["theoretical", "logical"],
+      default: "theoretical"
+    },
+    starterCode: {
+      type: String,
+      default: ""
+    },
 
     difficulty: {
       type: String,

@@ -116,6 +116,8 @@ export const submitQuiz = async (req, res) => {
       bonusTimeUsed: bonusTimeUsed || 0,
       tabViolations: tabViolations || 0,
       note: note || "Manual submit",
+      logicalTotal: logicalTotal || 0,
+      logicalAttempted: logicalAttempted || 0,
       detailedAnswers: detailedAnswers || []
     });
 
