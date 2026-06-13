@@ -19,7 +19,9 @@ const QuizResultSchema = new mongoose.Schema(
     percentage: { type: Number, default: 0 },
     completedAt: { type: Date, default: Date.now },
     timeTaken: { type: Number, default: 0 },
+    bonusTimeUsed: { type: Number, default: 0 },
     tabViolations: { type: Number, default: 0 },
+    isInvalidated: { type: Boolean, default: false },
     note: { type: String, default: "Manual submit" },
     detailedAnswers: [
       {

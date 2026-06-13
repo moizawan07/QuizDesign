@@ -17,7 +17,7 @@ const reattemptSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Pending", "Approved", "Rejected"],
+    enum: ["Pending", "Approved", "Rejected", "Exhausted"],
     default: "Pending",
   },
   createdAt: {

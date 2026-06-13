@@ -55,13 +55,13 @@ export const getMyAttempts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const attempts = await QuizResult.find({ userId: req.user.id })
+    const attempts = await QuizResult.find({ userId: req.user.id, isInvalidated: { $ne: true } })
       .select("quizId completedAt percentage total correct wrong timeTaken")
       .sort({ completedAt: -1 })
       .skip(skip)
       .limit(limit);
       
-    const total = await QuizResult.countDocuments({ userId: req.user.id });
+    const total = await QuizResult.countDocuments({ userId: req.user.id, isInvalidated: { $ne: true } });
 
     res.status(200).json({ 
       success: true, 
@@ -76,7 +76,7 @@ export const getMyAttempts = async (req, res) => {
 export const submitQuiz = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { quizId, correct, wrong, unattempted, total, percentage, completedAt, timeTaken, detailedAnswers, tabViolations, note } = req.body;
+    const { quizId, correct, wrong, unattempted, total, percentage, completedAt, timeTaken, bonusTimeUsed, detailedAnswers, tabViolations, note } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -90,9 +90,13 @@ export const submitQuiz = async (req, res) => {
       if (!approvedReattempt) {
         return res.status(400).json({ message: "You have already attempted this specific quiz." });
       }
-      if (existingAttempts.length >= 2) {
-        return res.status(400).json({ message: "You have already exhausted your approved reattempt." });
-      }
+      
+      // If they have an approved reattempt, delete the OLD results from the system
+      await QuizResult.deleteMany({ userId, quizId });
+      
+      // And mark the reattempt request as Exhausted so it cannot be reused or re-requested
+      approvedReattempt.status = "Exhausted";
+      await approvedReattempt.save();
     }
 
     if (!quizId || correct === undefined || wrong === undefined || unattempted === undefined || total === undefined) {
@@ -109,6 +113,7 @@ export const submitQuiz = async (req, res) => {
       percentage,
       completedAt,
       timeTaken,
+      bonusTimeUsed: bonusTimeUsed || 0,
       tabViolations: tabViolations || 0,
       note: note || "Manual submit",
       detailedAnswers: detailedAnswers || []
@@ -124,7 +129,7 @@ export const submitQuiz = async (req, res) => {
 
 export const getAllResults = async (req, res) => {
   try {
-    const results = await QuizResult.find()
+    const results = await QuizResult.find({ isInvalidated: { $ne: true } })
       .populate("userId")
       .populate("quizId")
       .sort({ completedAt: -1 });

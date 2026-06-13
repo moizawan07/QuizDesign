@@ -538,7 +538,35 @@ export default function AdminPage() {
                   <div>
                     <div style={labelStyle}>Time Consumed</div>
                     <div style={{ fontSize: 15, fontWeight: 500, color: "#0f172a" }}>
-                      {viewingResult.timeTaken ? `${Math.floor(viewingResult.timeTaken / 60)}m ${viewingResult.timeTaken % 60}s` : "N/A"}
+                      {(() => {
+                        if (viewingResult.timeTaken == null) return "N/A";
+                        
+                        const timeTakenAbs = Math.abs(viewingResult.timeTaken);
+                        const baseTimeSec = (viewingResult.quizId?.timeLimit || 0) * 60;
+                        
+                        // For old attempts that didn't save bonusTimeUsed, infer it if timeTaken is greater than base time
+                        let bonusSec = viewingResult.bonusTimeUsed || 0;
+                        if (!bonusSec && timeTakenAbs > baseTimeSec) {
+                          // Round inferred bonus to nearest minute to look clean
+                          bonusSec = Math.ceil((timeTakenAbs - baseTimeSec) / 60) * 60; 
+                        }
+                        
+                        const totalAvailableSec = baseTimeSec + bonusSec;
+
+                        return (
+                          <>
+                            {Math.floor(timeTakenAbs / 60)}m {timeTakenAbs % 60}s
+                            <span style={{ color: "#94a3b8", fontSize: 13, fontWeight: 400 }}>
+                              {" "} / {Math.floor(totalAvailableSec / 60)}m {totalAvailableSec % 60}s
+                            </span>
+                            {bonusSec > 0 && (
+                              <div style={{ fontSize: 12, color: "#8b5cf6", marginTop: 4, fontWeight: 600 }}>
+                                🎁 +{Math.floor(bonusSec / 60)}m Bonus Claimed
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -816,26 +844,57 @@ export default function AdminPage() {
                           The question bank is empty.
                         </div>
                       ) : (
-                        quizQuestions.map((q, idx) => (
-                          <div key={q._id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: 16, background: "#f8fafc" }}>
-                            <div style={{ fontWeight: 500, color: "#0f172a", fontSize: 14, marginBottom: 12, lineHeight: 1.5 }}>
-                              {idx + 1}. {q.questionText}
-                            </div>
-                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                              <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 500, background: "#f0fdf4", padding: "2px 8px", borderRadius: 4, border: "1px solid #bbf7d0" }}>
-                                Ans: {q.correctAnswer}
-                              </span>
-                              <span style={{ fontSize: 12, color: "#475569", fontWeight: 500, background: "#e2e8f0", padding: "2px 8px", borderRadius: 4 }}>
-                                {q.difficulty}
-                              </span>
-                              {q.questionCategory && (
-                                <span style={{ fontSize: 12, color: "#10b981", fontWeight: 500, background: "#ecfdf5", padding: "2px 8px", borderRadius: 4 }}>
-                                  {q.questionCategory}
+                        quizQuestions.map((q, idx) => {
+                          const total = q.stats?.total || 0;
+                          const correct = q.stats?.correct || 0;
+                          const wrong = q.stats?.wrong || 0;
+                          const unattempted = q.stats?.unattempted || 0;
+                          const correctPct = total > 0 ? (correct / total) * 100 : 0;
+                          const wrongPct = total > 0 ? (wrong / total) * 100 : 0;
+                          const unattemptedPct = total > 0 ? (unattempted / total) * 100 : 0;
+
+                          return (
+                            <div key={q._id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: 16, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 12 }}>
+                              <div style={{ fontWeight: 500, color: "#0f172a", fontSize: 14, lineHeight: 1.5 }}>
+                                {idx + 1}. {q.questionText}
+                              </div>
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                                <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 500, background: "#f0fdf4", padding: "2px 8px", borderRadius: 4, border: "1px solid #bbf7d0" }}>
+                                  Ans: {q.correctAnswer}
                                 </span>
-                              )}
+                                <span style={{ fontSize: 12, color: "#475569", fontWeight: 500, background: "#e2e8f0", padding: "2px 8px", borderRadius: 4 }}>
+                                  {q.difficulty}
+                                </span>
+                                {q.questionCategory && (
+                                  <span style={{ fontSize: 12, color: "#10b981", fontWeight: 500, background: "#ecfdf5", padding: "2px 8px", borderRadius: 4 }}>
+                                    {q.questionCategory}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Statistics Chart */}
+                              <div style={{ marginTop: 4, paddingTop: 12, borderTop: "1px dashed #cbd5e1" }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  Student Performance {total > 0 ? `(${total} Attempts)` : "(No Attempts Yet)"}
+                                </div>
+                                {total > 0 && (
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <div style={{ display: "flex", width: "100%", height: 8, borderRadius: 4, overflow: "hidden", background: "#e2e8f0" }}>
+                                      <div style={{ width: `${correctPct}%`, background: "#10b981" }} title={`${correct} Correct`} />
+                                      <div style={{ width: `${wrongPct}%`, background: "#ef4444" }} title={`${wrong} Wrong`} />
+                                      <div style={{ width: `${unattemptedPct}%`, background: "#94a3b8" }} title={`${unattempted} Unattempted`} />
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600 }}>
+                                      <span style={{ color: "#10b981" }}>{correct} Correct ({Math.round(correctPct)}%)</span>
+                                      <span style={{ color: "#ef4444" }}>{wrong} Wrong ({Math.round(wrongPct)}%)</span>
+                                      {unattempted > 0 && <span style={{ color: "#64748b" }}>{unattempted} Missed</span>}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
