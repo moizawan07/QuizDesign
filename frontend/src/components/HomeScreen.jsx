@@ -32,107 +32,14 @@ export default function HomeScreen({ onStart, user }) {
  
   const [showReattemptForm, setShowReattemptForm] = useState(false);
   const [reattemptReason, setReattemptReason] = useState("");
-  const [selectedQuizId, setSelectedQuizId] = useState(localStorage.getItem("selectedQuizId") || "");
+  const [selectedQuizId, setSelectedQuizId] = useState("");
  
   const quizzes = quizzesData?.quizzes || [];
   const attempts = attemptsData?.attempts || [];
   const reattempts = reattemptsData?.data || [];
   const attemptedQuizIds = attempts.map(a => typeof a.quizId === 'object' ? a.quizId?._id : a.quizId);
  
-  const selectedQuiz = quizzes.find(q => q._id === selectedQuizId);
-  const existingReq = reattempts.find(r => r.quizId?._id === selectedQuizId || r.quizId === selectedQuizId);
-  
-  const attemptsForSelected = attempts.filter(a => (typeof a.quizId === 'object' ? a.quizId?._id : a.quizId) === selectedQuizId).length;
-  const hasUnusedApprovedReattempt = existingReq && existingReq.status === "Approved" && attemptsForSelected === 1;
-  const alreadyAttempted = attemptedQuizIds.includes(selectedQuizId) && !hasUnusedApprovedReattempt;
-  
-  const quizClosed = selectedQuiz && selectedQuiz.status === "Closed";
- 
-  // Derive what the status zone should show (outside the card)
-  const getStatusInfo = () => {
-    if (!selectedQuizId) return null;
- 
-    if (existingReq) {
-      if (existingReq.status === "Pending")
-        return { bg: "#fffbeb", border: "#fde68a", color: "#92400e", text: <>⏳ <strong>Request Pending.</strong> Admin is reviewing your re-attempt request.</> };
-      if (existingReq.status === "Rejected")
-        return { bg: "#fef2f2", border: "#fecaca", color: "#b91c1c", text: <>❌ <strong>Request Denied.</strong> Your re-attempt request was rejected by the admin.</> };
-      if (existingReq.status === "Approved") {
-        if (attemptsForSelected >= 2) {
-          return { bg: "#f8fafc", border: "#e2e8f0", color: "#475569", text: <>⚠️ <strong>Attempts Exhausted.</strong> You have already used your approved re-attempt for this quiz.</> };
-        } else {
-          return { bg: "#ecfdf5", border: "#a7f3d0", color: "#065f46", text: <>✅ <strong>Re-attempt Approved!</strong> You can now take the quiz again.</> };
-        }
-      }
-    }
- 
-    if (alreadyAttempted && quizClosed)
-      return { bg: "#fef2f2", border: "#fecaca", color: "#b91c1c", text: <>❌ <strong>Quiz Closed.</strong> This quiz is currently closed and not accepting any re-attempts.</> };
- 
-    if (!alreadyAttempted && quizClosed)
-      return { bg: "#fef2f2", border: "#fecaca", color: "#b91c1c", text: <>❌ <strong>Quiz Closed.</strong> This quiz is currently closed and not accepting any attempts.</> };
- 
-    return null;
-  };
- 
-  const statusInfo = getStatusInfo();
- 
-  // What to show inside the card action area
-  const getCardAction = () => {
-    if (!selectedQuizId) return null;
- 
-    // If there's a status message, show nothing in card (unless it's an approved reattempt)
-    if (statusInfo && !hasUnusedApprovedReattempt) return null;
- 
-    // Already attempted — show reattempt flow
-    if (alreadyAttempted) {
-      if (showReattemptForm) {
-        return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <textarea
-              placeholder="Please explain why you need a re-attempt..."
-              value={reattemptReason}
-              onChange={(e) => setReattemptReason(e.target.value)}
-              style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #cbd5e1", fontSize: 13, minHeight: 80, fontFamily: "'Poppins', sans-serif" }}
-            />
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowReattemptForm(false)} style={{ flex: 1, padding: "10px", background: "#f1f5f9", color: "#475569", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleRequestReattemptSubmit} disabled={isRequesting || !reattemptReason.trim()} style={{ flex: 1, padding: "10px", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, cursor: !reattemptReason.trim() ? "not-allowed" : "pointer", opacity: !reattemptReason.trim() ? 0.6 : 1 }}>
-                {isRequesting ? "Submitting..." : "Send Request"}
-              </button>
-            </div>
-          </div>
-        );
-      }
-      return (
-        <button onClick={() => setShowReattemptForm(true)} style={{
-          width: "100%", padding: "14px 0",
-          background: "#fff", color: "#10b981", border: "1.5px solid #10b981", borderRadius: 8,
-          fontSize: 14, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
-          cursor: "pointer", transition: "all 0.2s"
-        }}>
-          Request Re-attempt
-        </button>
-      );
-    }
- 
-    // Normal begin button
-    return (
-      <button className="cta-btn" onClick={handleStart} disabled={!acknowledged} style={{
-        width: "100%", padding: "14px 0",
-        background: acknowledged ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "#cbd5e1",
-        color: acknowledged ? "#fff" : "#94a3b8", border: "none", borderRadius: 8,
-        fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
-        cursor: acknowledged ? "pointer" : "not-allowed", letterSpacing: "0.02em",
-        boxShadow: acknowledged ? "0 8px 28px rgba(16,185,129,0.28)" : "none",
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-        transition: "all 0.3s ease"
-      }}>
-        <span style={{ fontSize: 16, filter: acknowledged ? "none" : "grayscale(100%) opacity(0.5)" }}>🚀</span>
-        Begin Quiz Now
-      </button>
-    );
-  };
+
  
   const handleSelectQuiz = (e) => {
     const val = e.target.value;
@@ -143,9 +50,15 @@ export default function HomeScreen({ onStart, user }) {
     setMsg("");
  
     if (loadingAttempts) return;
-    if (attemptedQuizIds.includes(val)) { setShowTour(false); setAcknowledged(false); return; }
+    
+    const reqForVal = reattempts.find(r => r.quizId?._id === val || r.quizId === val);
+    const hasUnusedApproved = reqForVal && reqForVal.status === "Approved";
+    
+    if (attemptedQuizIds.includes(val) && !hasUnusedApproved) { setShowTour(false); setAcknowledged(false); return; }
+    
     const q = quizzes.find(q => q._id === val);
     if (q && q.status === "Closed") { setShowTour(false); setAcknowledged(false); return; }
+    
     if (!acknowledged && val) setShowTour(true);
   };
  
@@ -164,8 +77,15 @@ export default function HomeScreen({ onStart, user }) {
   const handleStart = () => {
     if (user) {
       if (!selectedQuizId) { setMsg("❌ Please select a quiz from the dropdown first."); return; }
-      if (alreadyAttempted) { setMsg("❌ You already gave this quiz, contact admin."); return; }
-      if (quizClosed) return;
+      
+      const reqForSelected = reattempts.find(r => r.quizId?._id === selectedQuizId || r.quizId === selectedQuizId);
+      const hasUnusedApproved = reqForSelected && reqForSelected.status === "Approved";
+      
+      if (attemptedQuizIds.includes(selectedQuizId) && !hasUnusedApproved) { setMsg("❌ You already gave this quiz, contact admin."); return; }
+      
+      const selectedQuiz = quizzes.find(q => q._id === selectedQuizId);
+      if (selectedQuiz && selectedQuiz.status === "Closed") return;
+      
       if (!acknowledged) { setMsg(""); setShowTour(true); return; }
     }
     onStart();
@@ -181,6 +101,9 @@ export default function HomeScreen({ onStart, user }) {
   };
  
   useEffect(() => {
+    // Force reset the selection when landing on or reloading the home screen
+    localStorage.removeItem("selectedQuizId");
+    
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href =
@@ -198,7 +121,13 @@ export default function HomeScreen({ onStart, user }) {
       {showTour && (
         <RulesAcknowledgeTour
           ruleElements={ruleRefs.current}
-          onComplete={() => { setShowTour(false); setAcknowledged(true); }}
+          onComplete={() => { 
+            setShowTour(false); 
+            setAcknowledged(true); 
+            if (selectedQuizId) {
+              onStart();
+            }
+          }}
         />
       )}
       <div style={{
@@ -331,11 +260,11 @@ export default function HomeScreen({ onStart, user }) {
                 </div>
 
                 <select
-                  style={{ width: "100%", padding: "16px 20px", borderRadius: 12, border: "2px solid #e2e8f0", fontSize: 15, color: "#0f172a", outline: "none", marginBottom: 20, fontFamily: "'Poppins', sans-serif", backgroundColor: "#f8fafc", transition: "all 0.3s ease", cursor: "pointer", appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center", backgroundSize: "18px" }}
+                  style={{ width: "100%", padding: "16px 20px", borderRadius: 14, border: "2px solid rgba(16,185,129,0.15)", fontSize: 15, color: "#0f172a", outline: "none", marginBottom: 20, fontFamily: "'Poppins', sans-serif", backgroundColor: "#ffffff", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", cursor: "pointer", appearance: "none", boxShadow: "0 4px 12px rgba(16,185,129,0.03)", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 16px center", backgroundSize: "18px" }}
                   onChange={handleSelectQuiz}
-                  value={selectedQuizId}
-                  onFocus={(e) => { e.target.style.borderColor = "#10b981"; e.target.style.boxShadow = "0 0 0 4px rgba(16,185,129,0.1)"; e.target.style.backgroundColor = "#ffffff"; }}
-                  onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "none"; e.target.style.backgroundColor = "#f8fafc"; }}
+                  value={quizzes.some(q => q._id === selectedQuizId) ? selectedQuizId : ""}
+                  onFocus={(e) => { e.target.style.borderColor = "#10b981"; e.target.style.boxShadow = "0 0 0 4px rgba(16,185,129,0.15), 0 4px 12px rgba(16,185,129,0.05)"; e.target.style.backgroundColor = "#ffffff"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "rgba(16,185,129,0.15)"; e.target.style.boxShadow = "0 4px 12px rgba(16,185,129,0.03)"; e.target.style.backgroundColor = "#ffffff"; }}
                 >
                   <option value="" disabled> Choose a quiz </option>
                   {quizzes.map(q => (
@@ -349,31 +278,32 @@ export default function HomeScreen({ onStart, user }) {
                   if (!selectedQuizId) return null;
 
                   const selectedQuiz = quizzes.find(q => q._id === selectedQuizId);
-
                   const existingReq = reattempts.find(r => r.quizId?._id === selectedQuizId || r.quizId === selectedQuizId);
+                  const hasUnusedApproved = existingReq && existingReq.status === "Approved";
+
                   if (existingReq) {
                     if (existingReq.status === "Pending") {
                       return (
-                        <div style={{ padding: 16, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#92400e" }}>
+                        <div style={{ padding: 14, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, marginTop: 5, textAlign: "center", fontSize: 13, color: "#92400e" }}>
                           ⏳ <strong>Request Pending.</strong> Admin is reviewing your re-attempt request.
                         </div>
                       );
                     } else if (existingReq.status === "Rejected") {
                       return (
-                        <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
+                        <div style={{ padding: 14, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 5, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
                           ❌ <strong>Request Denied.</strong> Your re-attempt request was rejected by the admin.
                         </div>
                       );
-                    } else if (existingReq.status === "Approved") {
+                    } else if (existingReq.status === "Exhausted") {
                       return (
-                        <div style={{ padding: 16, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#475569" }}>
+                        <div style={{ padding: 14, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, marginTop: 5, textAlign: "center", fontSize: 13, color: "#475569" }}>
                           ⚠️ <strong>Attempts Exhausted.</strong> You have already used your approved re-attempt for this quiz.
                         </div>
                       );
                     }
                   }
 
-                  if (attemptedQuizIds.includes(selectedQuizId)) {
+                  if (attemptedQuizIds.includes(selectedQuizId) && !hasUnusedApproved) {
                     if (selectedQuiz && selectedQuiz.status === "Closed") {
                       return (
                         <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
@@ -401,10 +331,7 @@ export default function HomeScreen({ onStart, user }) {
                       );
                     }
                     return (
-                      <div style={{ marginTop: 16 }}>
-                        <div style={{ padding: 12, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, textAlign: "center", fontSize: 12, color: "#64748b", marginBottom: 12 }}>
-                          ℹ️ You have already completed this quiz.
-                        </div>
+                      <div>
                         <button onClick={() => setShowReattemptForm(true)} style={{
                           width: "100%", padding: "14px 0",
                           background: "#fff", color: "#10b981", border: "1.5px solid #10b981", borderRadius: 8,
@@ -419,7 +346,7 @@ export default function HomeScreen({ onStart, user }) {
 
                   if (selectedQuiz && selectedQuiz.status === "Closed") {
                     return (
-                      <div style={{ padding: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 16, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
+                      <div style={{ padding: 14, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginTop: 5, textAlign: "center", fontSize: 13, color: "#b91c1c" }}>
                         ❌ <strong>Quiz Closed.</strong> This quiz is currently closed and not accepting any attempts.
                       </div>
                     );
@@ -489,7 +416,7 @@ export default function HomeScreen({ onStart, user }) {
  
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {rules.map((rule, i) => (
-                <div key={i} ref={(el) => (ruleRefs.current[i] = el)} className={`rule-card${shown.includes(i) ? " vis" : ""}`} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: "13px 16px", display: "flex", gap: 13, alignItems: "center", cursor: "default" }}>
+                <div key={i} ref={(el) => (ruleRefs.current[i] = el)} className={`rule-card${shown.includes(i) ? " vis" : ""}`} style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.04)", boxShadow: "0 2px 10px rgba(0,0,0,0.02)", borderRadius: 14, padding: "14px 18px", display: "flex", gap: 14, alignItems: "center", cursor: "default" }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>
                     {rule.icon}
                   </div>
@@ -502,7 +429,7 @@ export default function HomeScreen({ onStart, user }) {
               ))}
             </div>
  
-            <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fde68a", display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ marginTop: 18, padding: "16px 18px", borderRadius: 14, background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", border: "1px solid rgba(245,158,11,0.2)", boxShadow: "0 4px 15px rgba(245,158,11,0.05)", display: "flex", gap: 12, alignItems: "flex-start" }}>
               <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⚠️</span>
               <p style={{ fontWeight: 400, fontSize: 12, color: "#92400e", lineHeight: 1.7 }}>
                 <strong style={{ fontWeight: 600, color: "#78350f" }}>Warning: </strong>

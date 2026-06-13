@@ -2,6 +2,7 @@ import express from "express";
 import {
   createQuiz,
   getQuizzes,
+  updateQuiz,
   updateQuizStatus,
   createQuestion,
   getQuestionsForQuiz,
@@ -20,8 +21,8 @@ const router = express.Router();
 
 // Quizzes
 router.route("/quizzes").get(protect, isAdmin, getQuizzes).post(protect, isAdmin, createQuiz);
+router.route("/quizzes/:id").put(protect, isAdmin, updateQuiz).delete(protect, isAdmin, deleteQuiz);
 router.route("/quizzes/:quizId/status").put(protect, isAdmin, updateQuizStatus);
-router.route("/quizzes/:id").delete(protect, isAdmin, deleteQuiz);
 
 // Questions
 router.route("/questions").post(protect, isAdmin, createQuestion);

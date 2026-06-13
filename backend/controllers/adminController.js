@@ -8,7 +8,7 @@ import Role from "../models/Role.js";
 // --- QUIZZES ---
 export const createQuiz = async (req, res, next) => {
   try {
-    const { head, category, title, timeLimit } = req.body;
+    const { head, category, title, timeLimit, bonusPoints } = req.body;
     if (!head || !category || !title || !timeLimit) {
       return res.status(400).json({ success: false, message: "Head, category, title, and time limit are required" });
     }
@@ -17,10 +17,36 @@ export const createQuiz = async (req, res, next) => {
       category,
       title,
       timeLimit,
+      bonusPoints: bonusPoints || [0, 0, 0],
       stack: "General", // Keeping for backward compatibility if needed, or remove
       numberOfQuestions: 0 // Will be derived from actual questions
     });
     res.status(201).json({ success: true, data: quiz });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateQuiz = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { head, category, title, timeLimit, bonusPoints } = req.body;
+    
+    if (!head || !category || !title || !timeLimit) {
+      return res.status(400).json({ success: false, message: "Head, category, title, and time limit are required" });
+    }
+
+    const quiz = await Quiz.findByIdAndUpdate(
+      id,
+      { head, category, title, timeLimit, bonusPoints: bonusPoints || [0, 0, 0] },
+      { new: true, runValidators: true }
+    );
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    res.status(200).json({ success: true, data: quiz });
   } catch (error) {
     next(error);
   }
@@ -113,8 +139,36 @@ export const createQuestion = async (req, res, next) => {
 export const getQuestionsForQuiz = async (req, res, next) => {
   try {
     const { quizId } = req.params;
-    const questions = await Question.find({ quizId }).sort("-createdAt");
-    res.status(200).json({ success: true, data: questions });
+    const questions = await Question.find({ quizId }).sort("createdAt").lean();
+    
+    // Fetch all VALID quiz results to calculate statistics
+    const results = await QuizResult.find({ quizId, isInvalidated: { $ne: true } }).lean();
+    
+    const statsMap = {};
+    questions.forEach(q => {
+      statsMap[q._id.toString()] = { correct: 0, wrong: 0, unattempted: 0, total: 0 };
+    });
+
+    results.forEach(result => {
+      if (result.detailedAnswers) {
+        result.detailedAnswers.forEach(ans => {
+          const qId = ans.questionId?.toString();
+          if (qId && statsMap[qId]) {
+            statsMap[qId].total++;
+            if (ans.isCorrect === true) statsMap[qId].correct++;
+            else if (ans.isCorrect === false) statsMap[qId].wrong++;
+            else statsMap[qId].unattempted++;
+          }
+        });
+      }
+    });
+
+    const enrichedQuestions = questions.map(q => ({
+      ...q,
+      stats: statsMap[q._id.toString()]
+    }));
+
+    res.status(200).json({ success: true, data: enrichedQuestions });
   } catch (error) {
     next(error);
   }
@@ -127,8 +181,13 @@ export const getAllResults = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const results = await QuizResult.find().populate("userId").populate("quizId").sort("-createdAt").skip(skip).limit(limit);
-    const total = await QuizResult.countDocuments();
+    const results = await QuizResult.find({ isInvalidated: { $ne: true } })
+      .populate("userId")
+      .populate("quizId")
+      .sort("-createdAt")
+      .skip(skip)
+      .limit(limit);
+    const total = await QuizResult.countDocuments({ isInvalidated: { $ne: true } });
 
     res.status(200).json({ 
       success: true, 
@@ -221,7 +280,15 @@ export const updateReattemptStatus = async (req, res, next) => {
     }
 
     if (status === "Approved") {
-      await QuizResult.deleteOne({ userId: request.userId, quizId: request.quizId });
+      await QuizResult.updateMany(
+        { userId: request.userId, quizId: request.quizId },
+        { $set: { isInvalidated: true } }
+      );
+    } else {
+      await QuizResult.updateMany(
+        { userId: request.userId, quizId: request.quizId },
+        { $set: { isInvalidated: false } }
+      );
     }
 
     request.status = status;

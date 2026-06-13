@@ -16,6 +16,8 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [fetchError, setFetchError] = useState("");
+  const [usedBonusPoints, setUsedBonusPoints] = useState([false, false, false]);
+  const [bonusAnim, setBonusAnim] = useState(false);
 
   const timerRef = useRef(null);
   const isSubmittingRef = useRef(false);
@@ -123,6 +125,15 @@ export default function QuizScreen({ user, onSubmitComplete }) {
     const theoreticalTotal = questions.length - logicalTotal;
     const percentage = theoreticalTotal > 0 ? Math.round((correct / theoreticalTotal) * 100) : 0;
     const totalSecondsAllowed = quizDetails?.timeLimit * 60 || 0;
+    
+    let totalBonusSeconds = 0;
+    if (quizDetails?.bonusPoints) {
+      usedBonusPoints.forEach((isUsed, idx) => {
+        if (isUsed && quizDetails.bonusPoints[idx]) {
+          totalBonusSeconds += (quizDetails.bonusPoints[idx] * 60);
+        }
+      });
+    }
 
     const payload = {
       quizId: quizDetails?._id,
@@ -132,7 +143,8 @@ export default function QuizScreen({ user, onSubmitComplete }) {
       total: questions.length,
       percentage: percentage,
       completedAt: new Date().toISOString(),
-      timeTaken: totalSecondsAllowed - timeLeft,
+      timeTaken: (totalSecondsAllowed + totalBonusSeconds) - timeLeft,
+      bonusTimeUsed: totalBonusSeconds,
       detailedAnswers,
       logicalTotal,
       logicalAttempted,
@@ -251,6 +263,17 @@ export default function QuizScreen({ user, onSubmitComplete }) {
   const progress = ((current + 1) / questions.length) * 100;
   const isLastQuestion = current === questions.length - 1;
 
+  const handleBonusPoint = (index, minutes) => {
+    if (usedBonusPoints[index] || !minutes) return;
+    setTimeLeft(prev => prev + (minutes * 60));
+    const newUsed = [...usedBonusPoints];
+    newUsed[index] = true;
+    setUsedBonusPoints(newUsed);
+    
+    setBonusAnim(true);
+    setTimeout(() => setBonusAnim(false), 2000);
+  };
+
   return (
     <div
       style={{
@@ -339,9 +362,10 @@ export default function QuizScreen({ user, onSubmitComplete }) {
             <span style={{ fontSize: 12, fontWeight: 600, color: "#10b981", whiteSpace: "nowrap" }}>{current + 1}/{questions.length}</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: isUrgent ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.1)", border: isUrgent ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(16,185,129,0.2)", padding: "8px 16px", borderRadius: 10, transition: "all 0.3s" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: bonusAnim ? "rgba(139,92,246,0.15)" : isUrgent ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.1)", border: bonusAnim ? "1px solid rgba(139,92,246,0.4)" : isUrgent ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(16,185,129,0.2)", padding: "8px 16px", borderRadius: 10, transition: "all 0.3s", transform: bonusAnim ? "scale(1.05)" : "scale(1)", position: "relative" }}>
             <span style={{ fontSize: 16 }}>⏱️</span>
-            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 16, color: isUrgent ? "#dc2626" : "#10b981", letterSpacing: "0.05em", animation: isUrgent ? "glowPulse 0.6s ease-in-out infinite" : "none" }}>{formatTime(timeLeft)}</span>
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 16, color: bonusAnim ? "#8b5cf6" : isUrgent ? "#dc2626" : "#10b981", letterSpacing: "0.05em", animation: isUrgent ? "glowPulse 0.6s ease-in-out infinite" : "none" }}>{formatTime(timeLeft)}</span>
+            {bonusAnim && <span style={{ position: "absolute", top: -20, right: 0, color: "#8b5cf6", fontWeight: 800, fontSize: 12, animation: "fadeUp 1.5s forwards", textShadow: "0 2px 4px rgba(139,92,246,0.3)", whiteSpace: "nowrap" }}>+ Time Added!</span>}
           </div>
         </div>
       </header>
@@ -471,6 +495,43 @@ export default function QuizScreen({ user, onSubmitComplete }) {
                   ))}
                 </div>
               </div>
+
+              {quizDetails?.bonusPoints && quizDetails.bonusPoints.some(min => min > 0) && (
+                <div style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontWeight: 700, fontSize: 13, color: "#8b5cf6", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.15em", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 16 }}>🎁</span> Mystery Power-ups
+                  </h3>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {quizDetails.bonusPoints.map((minutes, idx) => {
+                      if (!minutes || minutes <= 0) return null;
+                      const isUsed = usedBonusPoints[idx];
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleBonusPoint(idx, minutes)}
+                          disabled={isUsed}
+                          title={isUsed ? "Already Claimed" : "Click to reveal extra time!"}
+                          style={{
+                            flex: 1, padding: "14px 0", borderRadius: 14,
+                            border: isUsed ? "1px dashed #e2e8f0" : "1px solid #ddd6fe",
+                            background: isUsed ? "#f8fafc" : "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
+                            color: isUsed ? "#94a3b8" : "#6d28d9",
+                            fontWeight: 700, fontSize: 11, cursor: isUsed ? "not-allowed" : "pointer",
+                            transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", 
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                            boxShadow: isUsed ? "none" : "0 4px 15px rgba(139, 92, 246, 0.08)",
+                          }}
+                          onMouseEnter={e => { if(!isUsed) e.currentTarget.style.transform = "translateY(-4px)"; }}
+                          onMouseLeave={e => { if(!isUsed) e.currentTarget.style.transform = "translateY(0)"; }}
+                        >
+                          <span style={{ fontSize: 18, filter: isUsed ? "grayscale(100%) opacity(0.5)" : "none" }}>{isUsed ? "🔓" : "🎁"}</span>
+                          <span style={{ textTransform: "uppercase" }}>{isUsed ? "Used" : "Reveal"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div style={{ marginBottom: 20 }}>
                 <h3 style={{ fontWeight: 700, fontSize: 11, color: "#64748b", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.15em" }}>Question Guide</h3>
